@@ -12,7 +12,7 @@ export default function SignIn() {
     <div
       className={`flex flex-col items-center justify-center h-screen ${pixelifySans.className}`}
     >
-      <div className="w-[375px] h-[612px] p-10 border-white border-2 rounded-2xl">
+      <div className="bg-[#0f0f0f] w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-white flex flex-col p-5 overflow-y-auto">
         <h1 className="text-4xl font-bold text-center text-white">FlowerMe</h1>
         <div className="flex flex-col items-center justify-center mt-8">
           <div className="w-full bg-white rounded-2xl p-8 shadow-lg">
