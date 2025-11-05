@@ -101,12 +101,12 @@ export default function Tracker() {
                   <Image src="/food2.png" alt="Juice" width={90} height={90} className="rounded-lg" />
 
                   <div className="flex flex-col mb-10">
-                    <h1 className="text-[1.2rem] text-black w-full">Orange juice</h1>
-                    <p className="text-sm text-black w-[90%]">1 serving, 100ml</p>
+                    <h1 className="text-[1.2rem] text-black w-full">Apple slices</h1>
+                    <p className="text-sm text-black w-[90%]">1/2 cup, 88g</p>
                   </div>
 
-                  <div className="flex flex-col ml-7">
-                    <h1 className="text-[2rem] text-black w-full">48</h1>
+                  <div className="flex flex-col ml-11">
+                    <h1 className="text-[2rem] text-black w-full">30</h1>
                     <p className="text-[1.2rem] text-black w-[90%] mt-[-9px]">kcal</p>
                   </div>
 
