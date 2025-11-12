@@ -22,11 +22,13 @@ export default function Home() {
                 </h2>
               </div>
             </Link>
-            <div className="bg-white rounded-2xl p-12 shadow-lg cursor-pointer">
-              <h2 className="text-2xl font-bold text-black text-center">
-                Flower Garden
-              </h2>
-            </div>
+            <Link href="/flipboard">
+              <div className="bg-white rounded-2xl p-12 shadow-lg cursor-pointer">
+                <h2 className="text-2xl font-bold text-black text-center">
+                  Flipboard
+                </h2>
+              </div>
+            </Link>
             <Link href="/leaderboard">
               <div className="bg-white rounded-2xl p-12 shadow-lg cursor-pointer">
                 <h2 className="text-2xl font-bold text-black text-center">
