@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Pixelify_Sans } from "next/font/google";
+import { level_1 } from "./flowers";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -13,9 +14,12 @@ const DOT_SPACING = 10;
 const COLS = Math.floor(1280 / DOT_SPACING);
 const ROWS = Math.floor(720 / DOT_SPACING);
 
+const CENTER_COL = Math.floor(COLS / 2);
+const CENTER_ROW = Math.floor(ROWS / 2);
+
 export default function Flipboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const dotsRef = useRef<boolean[][]>([]);
+  const [frame, setFrame] = useState(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -27,24 +31,44 @@ export default function Flipboard() {
     canvas.width = 1280;
     canvas.height = 720;
 
-    dotsRef.current = Array(ROWS)
-      .fill(null)
-      .map(() => Array(COLS).fill(false));
+    const draw = () => {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          const x = col * DOT_SPACING + DOT_SPACING / 2;
+          const y = row * DOT_SPACING + DOT_SPACING / 2;
 
-    for (let row = 0; row < ROWS; row++) {
-      for (let col = 0; col < COLS; col++) {
-        const x = col * DOT_SPACING + DOT_SPACING / 2;
-        const y = row * DOT_SPACING + DOT_SPACING / 2;
+          const flowerRow = row - (CENTER_ROW - 4);
+          const flowerCol = col - (CENTER_COL - 4);
 
-        ctx.fillStyle = "#222";
-        ctx.beginPath();
-        ctx.arc(x, y, DOT_SIZE / 2, 0, Math.PI * 2);
-        ctx.fill();
+          let isWhite = false;
+          if (
+            flowerRow >= 0 &&
+            flowerRow < 12 &&
+            flowerCol >= 0 &&
+            flowerCol < 12
+          ) {
+            isWhite = level_1[frame][flowerRow][flowerCol] === 1;
+          }
+
+          ctx.fillStyle = isWhite ? "#fff" : "#222";
+          ctx.beginPath();
+          ctx.arc(x, y, DOT_SIZE / 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
-    }
+    };
+
+    draw();
+  }, [frame]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame((prev) => (prev + 1) % level_1.length);
+    }, 500);
+    return () => clearInterval(interval);
   }, []);
 
   return (
