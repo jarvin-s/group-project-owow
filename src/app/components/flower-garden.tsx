@@ -1,11 +1,16 @@
 import Link from "next/link";
 
 import { Pixelify_Sans } from "next/font/google";
+import Image from "next/image";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
+
+const level_1 = "levels/level_1.svg"
+const level_2 = "levels/level_2.svg"
+const level_3 = "levels/level_3.svg"
 
 export default function FlowerGarden() {
   return (
@@ -13,13 +18,63 @@ export default function FlowerGarden() {
       <div
         className={`flex flex-col items-center justify-center h-screen ${pixelify.className}`}
       >
-        <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto">
-          <div className="flex items-center justify-center flex-row gap-4">
+        <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto justify-center items-center">
+          <div className="flex items-center justify-center flex-row gap-4 mb-10">
             <Link href="/">
               <ArrowLeft />
             </Link>
             <h1 className="text-4xl font-bold text-black">Flower Garden</h1>
           </div>
+
+          <div className="bg-[#a2a2a2] w-[300px] h-[500px] rounded-[40px] shadow-2xl flex flex-col p-5 overflow-y-auto justify-center">
+            <h1 className="text-2xl text-white">Levels</h1>
+            {/* First row */}
+            <div className="flex justify-between mb-4">
+              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+                <Image
+                  src={level_1}
+                  alt="Level 1"
+                  width={100}
+                  height={100}
+                />
+              </div>
+              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+                <Image
+                  src={level_2}
+                  alt="Level 2"
+                  width={100}
+                  height={100}
+                />
+              </div>
+            </div>
+
+            {/* Second row */}
+            <div className="flex justify-between mb-4">
+              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+                <Image
+                  src={level_3}
+                  alt="Level 3"
+                  width={100}
+                  height={100}
+                />
+              </div>
+              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+                {/* SVG goes here */}
+              </div>
+            </div>
+
+            {/* Third row */}
+            <div className="flex justify-between mb-4">
+              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+                {/* SVG goes here */}
+              </div>
+              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+                {/* SVG goes here */}
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
     </>

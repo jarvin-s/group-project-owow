@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Pixelify_Sans } from "next/font/google";
-import { level_1 } from "./flowers";
+import { level_1, level_2 } from "./flowers";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -50,7 +50,7 @@ export default function Flipboard() {
             flowerCol >= 0 &&
             flowerCol < 12
           ) {
-            isWhite = level_1[frame][flowerRow][flowerCol] === 1;
+            isWhite = level_2[frame][flowerRow][flowerCol] === 1;
           }
 
           ctx.fillStyle = isWhite ? "#fff" : "#222";
@@ -66,7 +66,7 @@ export default function Flipboard() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setFrame((prev) => (prev + 1) % level_1.length);
+      setFrame((prev) => (prev + 1) % level_2.length);
     }, 500);
     return () => clearInterval(interval);
   }, []);
