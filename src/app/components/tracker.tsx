@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { Pixelify_Sans } from "next/font/google";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -16,9 +17,140 @@ interface Food {
   serving: string;
 }
 
-export default function Tracker() {
+interface TrackerProps {
+  mealType?: string;
+}
+
+interface PopularFood {
+  id: number;
+  name: string;
+  serving: string;
+  calories: number;
+  image: string;
+  bgColor: string;
+  buttonColor: string;
+}
+
+const CALORIES_PER_FOOD = 250;
+const STORAGE_KEY = "dailyCalories";
+const COMPLETIONS_KEY = "goalCompletions";
+const DAILY_GOAL = 1800;
+
+const popularFoods: PopularFood[] = [
+  {
+    id: 1,
+    name: "Orange juice",
+    serving: "1 serving, 100ml",
+    calories: 250,
+    image: "/food1.png",
+    bgColor: "bg-[#DEDBD8]",
+    buttonColor: "bg-[#A2A2A2]",
+  },
+  {
+    id: 2,
+    name: "Apple slices",
+    serving: "1/2 cup, 88g",
+    calories: 250,
+    image: "/food2.png",
+    bgColor: "bg-[#A2A2A2]",
+    buttonColor: "bg-[#DEDBD8]",
+  },
+  {
+    id: 3,
+    name: "Bread, white",
+    serving: "1 slice, 28g",
+    calories: 250,
+    image: "/bread.png",
+    bgColor: "bg-[#DEDBD8]",
+    buttonColor: "bg-[#A2A2A2]",
+  },
+  {
+    id: 4,
+    name: "Milk 2%",
+    serving: "1 serving, 100ml",
+    calories: 250,
+    image: "/milk.png",
+    bgColor: "bg-[#A2A2A2]",
+    buttonColor: "bg-[#DEDBD8]",
+  },
+];
+
+export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Food[]>([]);
+  const [showPopup, setShowPopup] = useState(false);
+
+  const checkGoalCompletion = (calories: number) => {
+    if (calories >= DAILY_GOAL) {
+      const completions = parseInt(
+        localStorage.getItem(COMPLETIONS_KEY) || "0",
+        10
+      );
+      localStorage.setItem(COMPLETIONS_KEY, (completions + 1).toString());
+      window.dispatchEvent(new Event("levelUpdated"));
+
+      localStorage.setItem(STORAGE_KEY, "0");
+      window.dispatchEvent(new Event("caloriesUpdated"));
+    }
+  };
+
+  const addCalories = () => {
+    const currentCalories = parseInt(
+      localStorage.getItem(STORAGE_KEY) || "0",
+      10
+    );
+    const newCalories = currentCalories + CALORIES_PER_FOOD;
+    localStorage.setItem(STORAGE_KEY, newCalories.toString());
+    window.dispatchEvent(new Event("caloriesUpdated"));
+    checkGoalCompletion(newCalories);
+
+    setShowPopup(true);
+    setTimeout(() => {
+      setShowPopup(false);
+    }, 2000);
+  };
+
+  const mealNames: Record<string, string> = {
+    breakfast: "Breakfast",
+    lunch: "Lunch",
+    dinner: "Dinner",
+    snack: "Snack",
+  };
+
+  const mealName = mealNames[mealType.toLowerCase()] || "Breakfast";
+
+  const currentDate = useMemo(() => {
+    const date = new Date();
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    return `${days[date.getDay()]} ${date.getDate()} ${
+      months[date.getMonth()]
+    }`;
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const currentCalories = parseInt(
+        localStorage.getItem(STORAGE_KEY) || "0",
+        10
+      );
+      checkGoalCompletion(currentCalories);
+    }
+  }, []);
 
   useEffect(() => {
     const delayDebounce = setTimeout(async () => {
@@ -41,18 +173,24 @@ export default function Tracker() {
   }, [search]);
 
   return (
-    <div className={`flex items-center justify-center min-h-screen bg-gray-200 p-4 ${pixelify.className}`}>
-      <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto">
-        
-        <h1 className="text-base text-black mb-4 text-left mt-2">
-          Tue 4 Nov
-        </h1>
+    <div
+      className={`flex items-center justify-center min-h-screen bg-gray-200 p-4 ${pixelify.className}`}
+    >
+      <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto hide-scrollbar">
+        {/* Back button and date */}
+        <div className="flex items-center justify-between mb-4 mt-2">
+          <button
+            onClick={() => router.push("/tracker")}
+            className="text-black text-lg font-bold cursor-pointer"
+          >
+            ← Back
+          </button>
+          <h1 className="text-base text-black">{currentDate}</h1>
+        </div>
 
         <div className="w-full mb-4">
           <div className="bg-black py-6 flex flex-col justify-center items-center rounded-3xl gap-4">
-            <h1 className="text-base text-white w-[90%]">
-              Breakfast
-            </h1>
+            <h1 className="text-base text-white w-[90%]">{mealName}</h1>
 
             <div className="w-[90%]">
               <div className="flex items-center gap-2 bg-gray-100 px-4 py-3 rounded-full shadow-sm border">
@@ -67,113 +205,106 @@ export default function Tracker() {
             </div>
           </div>
 
-          {/* it hides the food card when typing in search bar */}
           {search.length === 0 && (
             <>
-              <h1 className="text-2xl text-black w-[90%] mt-4">
-                Popular
-              </h1>
+              <h1 className="text-2xl text-black w-[90%] mt-4">Popular</h1>
 
-              {/* food card 1 */}
-              <div className="w-full mb-4">
-                <div className="bg-[#DEDBD8] rounded-[1.875rem] w-full h-28 mt-3 flex items-center relative px-3">
-                  <Image src="/food1.png" alt="Juice" width={90} height={90} className="rounded-lg" />
+              {popularFoods.map((food, index) => (
+                <div
+                  key={food.id}
+                  className={`w-full ${index === 0 ? "mb-4" : "mt-9"} ${
+                    index === popularFoods.length - 1 ? "mb-4" : ""
+                  }`}
+                >
+                  <div
+                    className={`${food.bgColor} rounded-[1.875rem] w-full h-28 mt-3 flex items-center relative px-3`}
+                  >
+                    <Image
+                      src={food.image}
+                      alt={food.name}
+                      width={90}
+                      height={90}
+                      className="rounded-lg"
+                    />
 
-                  <div className="flex flex-col mb-10">
-                    <h1 className="text-[1.2rem] text-black w-full">Orange juice</h1>
-                    <p className="text-sm text-black w-[90%]">1 serving, 100ml</p>
+                    <div className="flex flex-col mb-10">
+                      <h1 className="text-[1.2rem] text-black w-full">
+                        {food.name}
+                      </h1>
+                      <p className="text-sm text-black w-[90%]">
+                        {food.serving}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`flex flex-col ${
+                        food.id === 2 || food.id === 4 ? "ml-11" : "ml-7"
+                      }`}
+                    >
+                      <h1 className="text-[2rem] text-black w-full">
+                        {food.calories}
+                      </h1>
+                      <p className="text-[1.2rem] text-black w-[90%] mt-[-9px]">
+                        kcal
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={addCalories}
+                      className={`w-12 h-10 cursor-pointer ${food.buttonColor} rounded-[0.9375rem] flex items-center justify-center absolute right-8 -bottom-5 shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
+                    >
+                      <span
+                        className={`text-2xl ${
+                          food.buttonColor === "bg-[#DEDBD8]"
+                            ? "text-black"
+                            : ""
+                        }`}
+                      >
+                        +
+                      </span>
+                    </button>
                   </div>
-
-                  <div className="flex flex-col ml-7">
-                    <h1 className="text-[2rem] text-black w-full">48</h1>
-                    <p className="text-[1.2rem] text-black w-[90%] mt-[-9px]">kcal</p>
-                  </div>
-
-                  <button className="w-12 h-10 bg-[#A2A2A2] rounded-[0.9375rem] flex items-center justify-center absolute right-8 -bottom-5 shadow-[0_8px_4px_rgba(0,0,0,0.30)]">
-                    <span className="text-2xl">+</span>
-                  </button>
                 </div>
-              </div>
-
-              {/* food card 2 */}
-              <div className="w-full mt-9">
-                <div className="bg-[#A2A2A2] rounded-[1.875rem] w-full h-28 mt-3 flex items-center relative px-3">
-                  <Image src="/food2.png" alt="Juice" width={90} height={90} className="rounded-lg" />
-
-                  <div className="flex flex-col mb-10">
-                    <h1 className="text-[1.2rem] text-black w-full">Apple slices</h1>
-                    <p className="text-sm text-black w-[90%]">1/2 cup, 88g</p>
-                  </div>
-
-                  <div className="flex flex-col ml-11">
-                    <h1 className="text-[2rem] text-black w-full">30</h1>
-                    <p className="text-[1.2rem] text-black w-[90%] mt-[-9px]">kcal</p>
-                  </div>
-
-                  <button className="w-12 h-10 bg-[#DEDBD8] rounded-[0.9375rem] flex items-center justify-center absolute right-8 -bottom-5 shadow-[0_8px_4px_rgba(0,0,0,0.30)]">
-                    <span className="text-2xl text-black">+</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* food card 3 */}
-              <div className="w-full mt-9">
-                <div className="bg-[#DEDBD8] rounded-[1.875rem] w-full h-28 mt-3 flex items-center relative px-3">
-                  <Image src="/bread.png" alt="Juice" width={90} height={90} className="rounded-lg" />
-
-                  <div className="flex flex-col mb-10">
-                    <h1 className="text-[1.2rem] text-black w-full">Bread, white</h1>
-                    <p className="text-sm text-black w-[90%]">1 slice, 28g</p>
-                  </div>
-
-                  <div className="flex flex-col ml-7">
-                    <h1 className="text-[2rem] text-black w-full">79</h1>
-                    <p className="text-[1.2rem] text-black w-[90%] mt-[-9px]">kcal</p>
-                  </div>
-
-                  <button className="w-12 h-10 bg-[#A2A2A2] rounded-[0.9375rem] flex items-center justify-center absolute right-8 -bottom-5 shadow-[0_8px_4px_rgba(0,0,0,0.30)]">
-                    <span className="text-2xl">+</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* food card 4 */}
-              <div className="w-full mb-4 mt-9">
-                <div className="bg-[#A2A2A2] rounded-[1.875rem] w-full h-28 mt-3 flex items-center relative px-3">
-                  <Image src="/milk.png" alt="Juice" width={90} height={90} className="rounded-lg" />
-
-                  <div className="flex flex-col mb-10">
-                    <h1 className="text-[1.2rem] text-black w-full">Milk 2%</h1>
-                    <p className="text-sm text-black w-full">1 serving, 100ml</p>
-                  </div>
-
-                  <div className="flex flex-col ml-11">
-                    <h1 className="text-[2rem] text-black w-full">50</h1>
-                    <p className="text-[1.2rem] text-black w-[90%] mt-[-9px]">kcal</p>
-                  </div>
-
-                  <button className="w-12 h-10 bg-[#DEDBD8] rounded-[0.9375rem] flex items-center justify-center absolute right-8 -bottom-5 shadow-[0_8px_4px_rgba(0,0,0,0.30)]">
-                    <span className="text-2xl">+</span>
-                  </button>
-                </div>
-              </div>
+              ))}
             </>
           )}
         </div>
 
-        {/* 🔍 This will show the food results and it only shows when typing in the search bar */}
         {search.length > 0 && (
           <div className="w-full mt-4">
             {results.length > 0 ? (
               results.map((item) => (
-                <div key={item.id} className="border-b py-2 text-sm text-black">
+                <div
+                  key={item.id}
+                  className="border-b py-2 text-sm text-black cursor-pointer hover:bg-gray-100"
+                  onClick={addCalories}
+                >
                   <p className="font-bold">{item.name}</p>
                   <p>{item.serving}</p>
                 </div>
               ))
             ) : (
-              <p className="text-black text-center mt-4 text-sm">No results...</p>
+              <p className="text-black text-center mt-4 text-sm">
+                No results...
+              </p>
             )}
+          </div>
+        )}
+
+        {/* Popup notification */}
+        {showPopup && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
+            <div className="bg-black border-4 border-white rounded-2xl px-8 py-6 shadow-2xl animate-fade-in">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl text-white font-bold">+</span>
+                <div>
+                  <p className="text-xl text-white font-bold">
+                    {CALORIES_PER_FOOD} calories
+                  </p>
+                  <p className="text-sm text-white">added!</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

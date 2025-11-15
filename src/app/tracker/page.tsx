@@ -1,9 +1,9 @@
-import Tracker from "../components/tracker";
+import TrackerOverview from "../components/tracker-overview";
 
 export default function TrackerPage() {
   return (
     <>
-      <Tracker />
+      <TrackerOverview />
     </>
   );
 }

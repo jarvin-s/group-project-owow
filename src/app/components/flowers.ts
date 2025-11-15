@@ -5,7 +5,7 @@ export type Flower = FlowerFrame[];
 /**
  * Default flower animation - blooming flower
  */
-export const level_2: Flower = [
+export const level_1: Flower = [
     [
         [0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -92,7 +92,7 @@ export const level_2: Flower = [
     ],
 ];
 
-export const level_1: Flower = [
+export const level_2: Flower = [
     // Frame 1 - (LAVENDER)
     [
         [0, 0, 0, 0, 0, 0, 0, 0, 0],

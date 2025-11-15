@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Pixelify_Sans } from "next/font/google";
-import { level_1, level_2 } from "./flowers";
+import { level_1, level_2, level_3, Flower } from "./flowers";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -17,9 +17,56 @@ const ROWS = Math.floor(720 / DOT_SPACING);
 const CENTER_COL = Math.floor(COLS / 2);
 const CENTER_ROW = Math.floor(ROWS / 2);
 
+const COMPLETIONS_KEY = "goalCompletions";
+
+const getCurrentLevel = (): Flower => {
+  if (typeof window === "undefined") return level_1;
+
+  const completions = parseInt(
+    localStorage.getItem(COMPLETIONS_KEY) || "0",
+    10
+  );
+
+  if (completions === 0) return level_1;
+  if (completions === 1) return level_2;
+  return level_3;
+};
+
 export default function Flipboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [frame, setFrame] = useState(0);
+  const [currentLevel, setCurrentLevel] = useState<Flower>(() =>
+    getCurrentLevel()
+  );
+
+  useEffect(() => {
+    const handleLevelUpdate = () => {
+      setCurrentLevel(getCurrentLevel());
+      setFrame(0);
+    };
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === COMPLETIONS_KEY) {
+        handleLevelUpdate();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        handleLevelUpdate();
+      }
+    };
+
+    window.addEventListener("levelUpdated", handleLevelUpdate);
+    window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("levelUpdated", handleLevelUpdate);
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -50,7 +97,7 @@ export default function Flipboard() {
             flowerCol >= 0 &&
             flowerCol < 12
           ) {
-            isWhite = level_2[frame][flowerRow][flowerCol] === 1;
+            isWhite = currentLevel[frame][flowerRow][flowerCol] === 1;
           }
 
           ctx.fillStyle = isWhite ? "#fff" : "#222";
@@ -62,14 +109,14 @@ export default function Flipboard() {
     };
 
     draw();
-  }, [frame]);
+  }, [frame, currentLevel]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setFrame((prev) => (prev + 1) % level_2.length);
+      setFrame((prev) => (prev + 1) % currentLevel.length);
     }, 500);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentLevel]);
 
   return (
     <div
