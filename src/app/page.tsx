@@ -29,10 +29,10 @@ export default function Home() {
                 </h2>
               </div>
             </Link>
-            <Link href="/leaderboard">
+            <Link href="/flower-garden">
               <div className="bg-white rounded-2xl p-12 shadow-lg cursor-pointer">
                 <h2 className="text-2xl font-bold text-black text-center">
-                  Leaderboard
+                  Flower Garden
                 </h2>
               </div>
             </Link>

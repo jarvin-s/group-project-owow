@@ -3,6 +3,7 @@
 import { useRef, useEffect, useState } from "react";
 import { Pixelify_Sans } from "next/font/google";
 import { level_1, level_2, level_3, Flower } from "./flowers";
+import { supabase } from "@/lib/supabaseClient";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -14,8 +15,10 @@ const DOT_SPACING = 10;
 const COLS = Math.floor(1280 / DOT_SPACING);
 const ROWS = Math.floor(720 / DOT_SPACING);
 
-const CENTER_COL = Math.floor(COLS / 2);
-const CENTER_ROW = Math.floor(ROWS / 2);
+const FLOWER_LEFT_OFFSET = 100;
+const FLOWER_TOP_OFFSET = Math.floor(60);
+const FLOWER_COL_OFFSET = Math.floor(FLOWER_LEFT_OFFSET / DOT_SPACING);
+const FLOWER_ROW_OFFSET = Math.floor(FLOWER_TOP_OFFSET / DOT_SPACING);
 
 const COMPLETIONS_KEY = "goalCompletions";
 
@@ -32,12 +35,27 @@ const getCurrentLevel = (): Flower => {
   return level_3;
 };
 
+interface LeaderboardEntry {
+  id: number;
+  name: string;
+}
+
 export default function Flipboard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [frame, setFrame] = useState(0);
   const [currentLevel, setCurrentLevel] = useState<Flower>(() =>
     getCurrentLevel()
   );
+
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      const { data } = await supabase.from("leaderboard").select("id, name");
+      if (data) setEntries(data);
+    }
+    fetchLeaderboard();
+  }, []);
 
   useEffect(() => {
     const handleLevelUpdate = () => {
@@ -87,8 +105,8 @@ export default function Flipboard() {
           const x = col * DOT_SPACING + DOT_SPACING / 2;
           const y = row * DOT_SPACING + DOT_SPACING / 2;
 
-          const flowerRow = row - (CENTER_ROW - 4);
-          const flowerCol = col - (CENTER_COL - 4);
+          const flowerRow = row - FLOWER_ROW_OFFSET;
+          const flowerCol = col - FLOWER_COL_OFFSET;
 
           let isWhite = false;
           if (
@@ -106,10 +124,28 @@ export default function Flipboard() {
           ctx.fill();
         }
       }
+
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 60px 'Pixelify Sans', sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+
+      const leaderboardStartX = 800;
+      const titleY = 50;
+      ctx.fillText("LEADERBOARD", leaderboardStartX, titleY);
+
+      ctx.font = "40px 'Pixelify Sans', sans-serif";
+      const startY = titleY + 100;
+      const lineHeight = 60;
+
+      entries.forEach((entry, index) => {
+        const y = startY + index * lineHeight;
+        ctx.fillText(`${entry.id}. ${entry.name}`, leaderboardStartX, y);
+      });
     };
 
     draw();
-  }, [frame, currentLevel]);
+  }, [frame, currentLevel, entries]);
 
   useEffect(() => {
     const interval = setInterval(() => {
