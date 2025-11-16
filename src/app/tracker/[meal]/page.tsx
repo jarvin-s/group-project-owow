@@ -1,14 +1,15 @@
-import Tracker from "../../components/tracker";
+import Tracker from "@/components/tracker";
+import { use } from "react";
 
 export default function MealTrackerPage({
   params,
 }: {
-  params: { meal: string };
+  params: Promise<{ meal: string }>;
 }) {
+  const { meal } = use(params);
   return (
     <>
-      <Tracker mealType={params.meal} />
+      <Tracker mealType={meal} />
     </>
   );
 }
-

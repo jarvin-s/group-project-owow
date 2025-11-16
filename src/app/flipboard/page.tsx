@@ -1,4 +1,4 @@
-import Flipboard from "../components/flipboard";
+import Flipboard from "@/components/flipboard";
 
 export default function FlipboardPage() {
   return <Flipboard />;

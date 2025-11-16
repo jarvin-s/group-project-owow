@@ -1,4 +1,4 @@
-import FlowerGarden from "../components/flower-garden";
+import FlowerGarden from "@/components/flower-garden";
 
 export default function FlowerGardenPage() {
   return (
