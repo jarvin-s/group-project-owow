@@ -45,20 +45,18 @@ export default function TrackerOverview() {
   const router = useRouter();
   const dailyGoal = 1800;
 
-  const [totalCalories, setTotalCalories] = useState(() => {
-    if (typeof window !== "undefined") {
-      const storedCalories = localStorage.getItem(STORAGE_KEY);
-      if (storedCalories) {
-        return parseInt(storedCalories, 10);
-      } else {
-        localStorage.setItem(STORAGE_KEY, "0");
-        return 0;
-      }
-    }
-    return 0;
-  });
+  const [totalCalories, setTotalCalories] = useState(0);
 
   useEffect(() => {
+    const storedCalories = localStorage.getItem(STORAGE_KEY);
+    if (storedCalories) {
+      setTimeout(() => {
+        setTotalCalories(parseInt(storedCalories, 10));
+      }, 1000);
+    } else {
+      localStorage.setItem(STORAGE_KEY, "0");
+    }
+
     const handleCaloriesUpdate = () => {
       const updatedCalories = parseInt(
         localStorage.getItem(STORAGE_KEY) || "0",
@@ -75,7 +73,7 @@ export default function TrackerOverview() {
     return () => {
       window.removeEventListener("caloriesUpdated", handleCaloriesUpdate);
     };
-  }, []);
+  }, [dailyGoal]);
 
   const currentDate = useMemo(() => {
     const date = new Date();
