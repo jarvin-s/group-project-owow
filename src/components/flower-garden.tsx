@@ -8,9 +8,12 @@ const pixelify = Pixelify_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-const level_1 = "levels/level_1.svg"
-const level_2 = "levels/level_2.svg"
-const level_3 = "levels/level_3.svg"
+const level_1 = "levels/level_1.svg";
+const level_2 = "levels/level_2.svg";
+const level_3 = "levels/level_3.svg";
+const level_4 = "levels/level_4.svg";
+const level_5 = "levels/level_5.svg";
+const level_6 = "levels/level_6.svg";
 
 export default function FlowerGarden() {
   return (
@@ -31,50 +34,33 @@ export default function FlowerGarden() {
             {/* First row */}
             <div className="flex justify-between mb-4">
               <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
-                <Image
-                  src={level_1}
-                  alt="Level 1"
-                  width={100}
-                  height={100}
-                />
+                <Image src={level_1} alt="Level 1" width={100} height={100} />
               </div>
               <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
-                <Image
-                  src={level_2}
-                  alt="Level 2"
-                  width={100}
-                  height={100}
-                />
+                <Image src={level_2} alt="Level 2" width={90} height={90} />
               </div>
             </div>
 
             {/* Second row */}
             <div className="flex justify-between mb-4">
               <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
-                <Image
-                  src={level_3}
-                  alt="Level 3"
-                  width={100}
-                  height={100}
-                />
+                <Image src={level_3} alt="Level 3" width={100} height={100} />
               </div>
               <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
-                {/* SVG goes here */}
+                <Image src={level_4} alt="Level 4" width={90} height={90} />
               </div>
             </div>
 
             {/* Third row */}
             <div className="flex justify-between mb-4">
               <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
-                {/* SVG goes here */}
+                <Image src={level_5} alt="Level 5" width={90} height={90} />
               </div>
               <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
-                {/* SVG goes here */}
+                <Image src={level_6} alt="Level 6" width={90} height={90} />
               </div>
             </div>
-
           </div>
-
         </div>
       </div>
     </>
