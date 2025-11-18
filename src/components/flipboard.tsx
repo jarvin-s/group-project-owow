@@ -2,7 +2,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Pixelify_Sans } from "next/font/google";
-import { level_1, level_2, level_3, Flower } from "./flowers";
+import { level_1, level_2, level_3, level_4, Flower } from "./flowers";
 import { supabase } from "@/lib/supabaseClient";
 
 const pixelify = Pixelify_Sans({
@@ -32,7 +32,8 @@ const getCurrentLevel = (): Flower => {
 
   if (completions === 0) return level_1;
   if (completions === 1) return level_2;
-  return level_3;
+  if (completions === 2) return level_3;
+  return level_4;
 };
 
 interface LeaderboardEntry {
