@@ -272,17 +272,32 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
 
         {search.length > 0 && (
           <div className="w-full mt-4">
+            <h1 className="text-[1.2rem] text-black w-full mb-2">Results</h1>
             {results.length > 0 ? (
-              results.map((item) => (
-                <div
-                  key={item.id}
-                  className="border-b py-2 text-sm text-black cursor-pointer hover:bg-gray-100"
-                  onClick={addCalories}
-                >
-                  <p className="font-bold">{item.name}</p>
-                  <p>{item.serving}</p>
-                </div>
-              ))
+              results.map((item, index) => {
+                const isEven = index % 2 === 0;
+                const buttonColor = isEven ? "bg-[#A2A2A2]" : "bg-[#DEDBD8]";
+                const rowBgColor = isEven ? "bg-[#DEDBD8]" : "bg-[#A2A2A2]";
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`text-sm text-black flex items-center justify-between ${rowBgColor} rounded-[0.9375rem] p-3 mb-3 h-20`}
+                  >
+                    <div>
+                      <p className=" text-[1.3rem]">{item.name}</p>
+                      <p>{item.serving}</p>
+                    </div>
+
+                    <button
+                      className={`cursor-pointer w-10 h-9 ${buttonColor} rounded-[0.9375rem] flex items-center justify-center shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
+                      onClick={addCalories}
+                    >
+                      <span className="text-xl text-black">+</span>
+                    </button>
+                  </div>
+                );
+              })
             ) : (
               <p className="text-black text-center mt-4 text-sm">
                 No results...
