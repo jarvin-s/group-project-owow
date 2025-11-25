@@ -1,12 +1,77 @@
+"use client";
+
 import { Pixelify_Sans } from "next/font/google";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/lib/auth";
 
 const pixelifySans = Pixelify_Sans({
   variable: "--font-pixelify-sans",
   subsets: ["latin"],
 });
 
+function capitalizeFirstLetter(str: string) {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 export default function SignUp() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push("/");
+    }
+  }, [user, authLoading, router]);
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: capitalizeFirstLetter(name),
+          },
+        },
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (data.user) {
+        router.push("/");
+        router.refresh();
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. " + err);
+      setLoading(false);
+    }
+  };
+
+  if (authLoading || user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`flex flex-col items-center justify-center h-screen ${pixelifySans.className}`}
@@ -16,7 +81,12 @@ export default function SignUp() {
         <div className="flex flex-col items-center justify-center mt-8">
           <div className="w-full bg-white rounded-2xl p-8 shadow-lg">
             <h2 className="text-2xl font-bold text-black mb-6">Sign Up</h2>
-            <form className="flex flex-col gap-4">
+            {error && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            <form className="flex flex-col gap-4" onSubmit={handleSignUp}>
               <div className="flex flex-col gap-2">
                 <label
                   htmlFor="email"
@@ -27,8 +97,30 @@ export default function SignUp() {
                 <input
                   type="email"
                   id="email"
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-black"
                   placeholder="Enter your email"
+                  disabled={loading}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="name"
+                  className="text-sm font-medium text-black"
+                >
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-black"
+                  placeholder="Enter your name"
+                  disabled={loading}
                 />
               </div>
               <div className="flex flex-col gap-2">
@@ -41,8 +133,13 @@ export default function SignUp() {
                 <input
                   type="password"
                   id="password"
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-black focus:outline-none focus:ring-2 focus:ring-black"
                   placeholder="Enter your password"
+                  disabled={loading}
                 />
                 <p className="text-sm text-black text-center cursor-pointer">
                   Already have an account?{" "}
@@ -53,9 +150,10 @@ export default function SignUp() {
               </div>
               <button
                 type="submit"
-                className="mt-4 px-4 cursor-pointer py-2 bg-[#0f0f0f] text-white font-semibold rounded-full hover:bg-[#0f0f0f]/80 transition-colors"
+                disabled={loading}
+                className="mt-4 px-4 cursor-pointer py-2 bg-[#0f0f0f] text-white font-semibold rounded-full hover:bg-[#0f0f0f]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign Up
+                {loading ? "Signing up..." : "Sign Up"}
               </button>
             </form>
           </div>
