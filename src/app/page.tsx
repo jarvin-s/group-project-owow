@@ -16,23 +16,30 @@ export default function Home() {
           <h1 className="text-4xl font-bold text- text-white mb-8">Welcome</h1>
           <div className="flex flex-col gap-4">
             <Link href="/tracker">
-              <div className="bg-white rounded-2xl p-12 shadow-lg cursor-pointer">
+              <div className="bg-white rounded-2xl p-10 shadow-lg cursor-pointer">
                 <h2 className="text-2xl font-bold text-black text-center">
                   Track Calories
                 </h2>
               </div>
             </Link>
             <Link href="/flipboard">
-              <div className="bg-white rounded-2xl p-12 shadow-lg cursor-pointer">
+              <div className="bg-white rounded-2xl p-10 shadow-lg cursor-pointer">
                 <h2 className="text-2xl font-bold text-black text-center">
                   Flipboard
                 </h2>
               </div>
             </Link>
             <Link href="/flower-garden">
-              <div className="bg-white rounded-2xl p-12 shadow-lg cursor-pointer">
+              <div className="bg-white rounded-2xl p-10 shadow-lg cursor-pointer">
                 <h2 className="text-2xl font-bold text-black text-center">
                   Flower Garden
+                </h2>
+              </div>
+            </Link>
+            <Link href="/progress">
+              <div className="bg-white rounded-2xl p-10 shadow-lg cursor-pointer">
+                <h2 className="text-2xl font-bold text-black text-center">
+                  Progress
                 </h2>
               </div>
             </Link>
