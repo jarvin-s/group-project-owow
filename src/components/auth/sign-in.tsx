@@ -45,7 +45,6 @@ export default function SignIn() {
       }
 
       if (data.user) {
-        // Redirect to home page after successful sign in
         router.push("/");
         router.refresh();
       }
@@ -55,7 +54,6 @@ export default function SignIn() {
     }
   };
 
-  // Show loading while checking auth or redirecting
   if (authLoading || user) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -121,7 +119,7 @@ export default function SignIn() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-4 w-full px-4 cursor-pointer py-2 bg-[#0f0f0f] text-white font-semibold rounded-full hover:bg-[#0f0f0f]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-2 w-full px-4 cursor-pointer py-2 bg-[#0f0f0f] text-white font-semibold rounded-full hover:bg-[#0f0f0f]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Signing in..." : "Sign In"}
               </button>

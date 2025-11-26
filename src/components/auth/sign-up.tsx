@@ -151,7 +151,7 @@ export default function SignUp() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-4 px-4 cursor-pointer py-2 bg-[#0f0f0f] text-white font-semibold rounded-full hover:bg-[#0f0f0f]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-2 px-4 cursor-pointer py-2 bg-[#0f0f0f] text-white font-semibold rounded-full hover:bg-[#0f0f0f]/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Signing up..." : "Sign Up"}
               </button>

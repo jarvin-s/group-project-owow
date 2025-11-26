@@ -191,7 +191,6 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
         <div className="w-full mb-4">
           <div className="bg-black py-6 flex flex-col justify-center items-center rounded-3xl gap-4">
             <h1 className="text-base text-white w-[90%]">{mealName}</h1>
-
             <div className="w-[90%]">
               <div className="flex items-center gap-2 bg-gray-100 px-4 py-3 rounded-full shadow-sm border">
                 <input
