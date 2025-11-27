@@ -4,8 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { Pixelify_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-
-const STORAGE_KEY = "dailyCalories";
+import { getDailyCalories } from "@/lib/userProgress";
+import { supabase } from "@/lib/supabaseClient";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -48,30 +48,37 @@ export default function TrackerOverview() {
   const [totalCalories, setTotalCalories] = useState(0);
 
   useEffect(() => {
-    const storedCalories = localStorage.getItem(STORAGE_KEY);
-    if (storedCalories) {
-      setTimeout(() => {
-        setTotalCalories(parseInt(storedCalories, 10));
-      }, 1000);
-    } else {
-      localStorage.setItem(STORAGE_KEY, "0");
+    async function loadCalories() {
+      const calories = await getDailyCalories();
+      setTotalCalories(calories);
     }
+    loadCalories();
 
-    const handleCaloriesUpdate = () => {
-      const updatedCalories = parseInt(
-        localStorage.getItem(STORAGE_KEY) || "0",
-        10
-      );
+    const handleCaloriesUpdate = async () => {
+      const updatedCalories = await getDailyCalories();
       setTotalCalories(updatedCalories);
-      if (updatedCalories == dailyGoal) {
-        localStorage.setItem(STORAGE_KEY, "0");
-      }
     };
 
     window.addEventListener("caloriesUpdated", handleCaloriesUpdate);
 
+    const channel = supabase
+      .channel("user_progress_calories_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "user_progress",
+        },
+        () => {
+          handleCaloriesUpdate();
+        }
+      )
+      .subscribe();
+
     return () => {
       window.removeEventListener("caloriesUpdated", handleCaloriesUpdate);
+      supabase.removeChannel(channel);
     };
   }, [dailyGoal]);
 

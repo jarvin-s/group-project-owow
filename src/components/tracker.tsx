@@ -5,6 +5,11 @@ import { supabase } from "../lib/supabaseClient";
 import { Pixelify_Sans } from "next/font/google";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import {
+  getDailyCalories,
+  updateDailyCalories,
+  incrementGoalCompletions,
+} from "@/lib/userProgress";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -32,8 +37,6 @@ interface PopularFood {
 }
 
 const CALORIES_PER_FOOD = 250;
-const STORAGE_KEY = "dailyCalories";
-const COMPLETIONS_KEY = "goalCompletions";
 const DAILY_GOAL = 1800;
 
 const popularFoods: PopularFood[] = [
@@ -81,29 +84,20 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
   const [results, setResults] = useState<Food[]>([]);
   const [showPopup, setShowPopup] = useState(false);
 
-  const checkGoalCompletion = (calories: number) => {
+  const checkGoalCompletion = async (calories: number) => {
     if (calories >= DAILY_GOAL) {
-      const completions = parseInt(
-        localStorage.getItem(COMPLETIONS_KEY) || "0",
-        10
-      );
-      localStorage.setItem(COMPLETIONS_KEY, (completions + 1).toString());
+      await incrementGoalCompletions();
       window.dispatchEvent(new Event("levelUpdated"));
-
-      localStorage.setItem(STORAGE_KEY, "0");
       window.dispatchEvent(new Event("caloriesUpdated"));
     }
   };
 
-  const addCalories = () => {
-    const currentCalories = parseInt(
-      localStorage.getItem(STORAGE_KEY) || "0",
-      10
-    );
+  const addCalories = async () => {
+    const currentCalories = await getDailyCalories();
     const newCalories = currentCalories + CALORIES_PER_FOOD;
-    localStorage.setItem(STORAGE_KEY, newCalories.toString());
+    await updateDailyCalories(newCalories);
     window.dispatchEvent(new Event("caloriesUpdated"));
-    checkGoalCompletion(newCalories);
+    await checkGoalCompletion(newCalories);
 
     setShowPopup(true);
     setTimeout(() => {
@@ -143,13 +137,11 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const currentCalories = parseInt(
-        localStorage.getItem(STORAGE_KEY) || "0",
-        10
-      );
-      checkGoalCompletion(currentCalories);
+    async function checkInitialGoalCompletion() {
+      const currentCalories = await getDailyCalories();
+      await checkGoalCompletion(currentCalories);
     }
+    checkInitialGoalCompletion();
   }, []);
 
   useEffect(() => {
