@@ -19,10 +19,10 @@ interface Meal {
 }
 
 const meals: Meal[] = [
-  { id: "breakfast", name: "Breakfast", icon: "/food1.png" },
-  { id: "lunch", name: "Lunch", icon: "/food2.png" },
-  { id: "dinner", name: "Dinner", icon: "/bread.png" },
-  { id: "snack", name: "Snack", icon: "/milk.png" },
+  { id: "breakfast", name: "Breakfast", icon: "/egg.png" },
+  { id: "lunch", name: "Lunch", icon: "/hashbrown.png" },
+  { id: "dinner", name: "Dinner", icon: "/burger.png" },
+  { id: "snack", name: "Snack", icon: "/popcorn.png" },
 ];
 
 export default function TrackerOverview() {
