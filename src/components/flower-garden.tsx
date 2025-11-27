@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 
 import { Pixelify_Sans } from "next/font/google";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -15,7 +18,29 @@ const level_4 = "levels/level_4.svg";
 const level_5 = "levels/level_5.svg";
 const level_6 = "levels/level_6.svg";
 
+const STORAGE_KEY = "selectedLevel";
+
 export default function FlowerGarden() {
+  const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!Number.isNaN(parsed)) {
+        setSelectedLevel(parsed);
+      }
+    }
+  }, []);
+
+  const handleSelect = (levelId: number) => {
+    setSelectedLevel(levelId);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, levelId.toString());
+    }
+  };
+
   return (
     <>
       <div
@@ -33,30 +58,48 @@ export default function FlowerGarden() {
             <h1 className="text-2xl text-white">Levels</h1>
             {/* First row */}
             <div className="flex justify-between mb-4">
-              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+              <div
+                className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center cursor-pointer"
+                onClick={() => handleSelect(1)}
+              >
                 <Image src={level_1} alt="Level 1" width={100} height={100} />
               </div>
-              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+              <div
+                className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center cursor-pointer"
+                onClick={() => handleSelect(2)}
+              >
                 <Image src={level_2} alt="Level 2" width={90} height={90} />
               </div>
             </div>
 
             {/* Second row */}
             <div className="flex justify-between mb-4">
-              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+              <div
+                className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center cursor-pointer"
+                onClick={() => handleSelect(3)}
+              >
                 <Image src={level_3} alt="Level 3" width={100} height={100} />
               </div>
-              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+              <div
+                className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center cursor-pointer"
+                onClick={() => handleSelect(4)}
+              >
                 <Image src={level_4} alt="Level 4" width={90} height={90} />
               </div>
             </div>
 
             {/* Third row */}
             <div className="flex justify-between mb-4">
-              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+              <div
+                className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center cursor-pointer"
+                onClick={() => handleSelect(5)}
+              >
                 <Image src={level_5} alt="Level 5" width={90} height={90} />
               </div>
-              <div className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center">
+              <div
+                className="bg-[#030303] w-[120px] h-[120px] rounded-lg flex items-center justify-center cursor-pointer"
+                onClick={() => handleSelect(6)}
+              >
                 <Image src={level_6} alt="Level 6" width={90} height={90} />
               </div>
             </div>
