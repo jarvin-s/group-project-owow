@@ -3,6 +3,12 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { Pixelify_Sans } from "next/font/google";
+
+const pixelify = Pixelify_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 const publicRoutes = ["/sign-in", "/sign-up"];
 
@@ -25,7 +31,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen gap-2">
+      <div
+        className={`flex items-center justify-center h-screen gap-2 ${pixelify.className}`}
+      >
         <div className="text-black text-2xl font-bold">Loading...</div>
         <svg
           className="text-gray-300 animate-spin"
