@@ -13,21 +13,45 @@ const pixelifySans = Pixelify_Sans({
   subsets: ["latin"],
 });
 
+type WeeklyData = {
+  day: string;
+  protein: number;
+};
+
 export default function ProgressPage() {
-  const [weekly, setWeekly] = useState<{ day: string; protein: number }[]>([]);
+  const [data, setData] = useState<WeeklyData[]>([]);
+  const [view, setView] = useState<"weekly" | "monthly">("weekly"); // current view
   const router = useRouter();
 
   useEffect(() => {
-    fetch("/api/progress/weekly")
-      .then((res) => res.json())
-      .then((data) => {
-        const chart = data.week.map((day: string, index: number) => ({
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`/api/progress/${view}`);
+        const json = await res.json();
+
+        if (!json.week || !json.protein) return;
+
+        const chart = json.week.map((day: string, index: number) => ({
           day,
-          protein: data.protein[index],
+          protein: json.protein[index],
         }));
-        setWeekly(chart);
-      });
-  }, []);
+
+        setData(chart);
+      } catch (err) {
+        console.error(`Failed to load ${view} data:`, err);
+      }
+    };
+
+    fetchData();
+  }, [view]);
+
+  // Calculate dynamic summary
+  const consistentThreshold = 50;
+  const consistentDays = data.filter(
+    (d) => d.protein >= consistentThreshold
+  ).length;
+  const avgProtein =
+    data.reduce((sum, d) => sum + d.protein, 0) / (data.length || 1);
 
   return (
     <div
@@ -44,23 +68,61 @@ export default function ProgressPage() {
             Your progress:
           </div>
 
+          {/* Weekly / Monthly Buttons */}
           <div className="flex gap-4 mb-4">
-            <button className="bg-white border border-black px-4 py-2 rounded-xl text-black">
+            <button
+              className={`px-4 py-2 rounded-xl border border-black font-bold ${
+                view === "weekly"
+                  ? "bg-black text-white"
+                  : "bg-white text-black"
+              }`}
+              onClick={() => setView("weekly")}
+            >
               Weekly
             </button>
-            <button className="bg-white border border-black px-4 py-2 rounded-xl text-black">
+            <button
+              className={`px-4 py-2 rounded-xl border border-black font-bold ${
+                view === "monthly"
+                  ? "bg-black text-white"
+                  : "bg-white text-black"
+              }`}
+              onClick={() => setView("monthly")}
+            >
               Monthly
             </button>
           </div>
 
-          <div className="w-full h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weekly}>
-                <XAxis dataKey="day" stroke="#000" />
-                <YAxis stroke="#000" />
-                <Bar dataKey="protein" fill="#000000" />
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Chart */}
+          <div className="w-full h-[200px] min-h-[200px]">
+            {data.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" key={view}>
+                <BarChart data={data}>
+                  <XAxis
+                    dataKey="day"
+                    stroke="#000"
+                    interval={0}
+                    tick={{
+                      fontSize: 12,
+                      fontFamily: "Sans-serif",
+                      fontWeight: "bold",
+                      fill: "#000",
+                    }}
+                  />
+                  <YAxis
+                    stroke="#000"
+                    tick={{
+                      fontSize: 16,
+                      fontFamily: "Sans-serif",
+                      fontWeight: "bold",
+                      fill: "#000",
+                    }}
+                  />
+                  <Bar dataKey="protein" fill="#000000" />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-black text-center">Loading chart...</p>
+            )}
           </div>
         </div>
 
@@ -69,12 +131,18 @@ export default function ProgressPage() {
           <h2 className="text-xl font-semibold mb-3 text-black">
             Recent meals:
           </h2>
-          <p className="text-sm leading-relaxed text-black">
-            <strong>Summary:</strong>
-            <br />
-            Consistent Days: 3/7 <br />
-            Avg Protein: 70g/day
-          </p>
+          {data.length > 0 ? (
+            <p className="text-sm leading-relaxed text-black font-sans">
+              <strong>Summary:</strong>
+              <br />
+              Consistent Days: {consistentDays}/{data.length} <br />
+              Avg Protein: {Math.round(avgProtein)}g/day
+            </p>
+          ) : (
+            <p className="text-sm leading-relaxed text-black text-center">
+              Loading summary...
+            </p>
+          )}
         </div>
 
         {/* Clickable Flower */}

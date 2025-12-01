@@ -1,37 +1,59 @@
-import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+
+type ProteinRow = {
+  id?: number;
+  date: string;
+  protein: number;
+  user_id?: string | null;
+};
+
 export async function GET() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY! // must be server-side
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const today = new Date();
-  const start = new Date();
-  start.setDate(today.getDate() - 6);
-
-  const { data, error } = await supabase
-    .from("meals")
-    .select("date, protein, user_id")
-    .gte("date", start.toISOString())
-    .lte("date", today.toISOString());
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (!supabaseUrl || !supabaseKey) {
+    return new Response(
+      JSON.stringify({ error: "Supabase env variables missing" }),
+      { status: 500 }
+    );
   }
 
-  const week = ["M", "T", "W", "T", "F", "S", "S"];
-  const totals = Array(7).fill(0);
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
-  data.forEach((meal) => {
-    const d = new Date(meal.date);
-    const index = (d.getDay() + 6) % 7; // Monday = 0
-    totals[index] += meal.protein;
+  
+  const { data, error } = await supabase
+    .from("protein_log")
+    .select("date, protein");
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+
+  const rows: ProteinRow[] = data || [];
+
+  
+  const weekMap: Record<string, number> = {
+    Mon: 0,
+    Tue: 0,
+    Wed: 0,
+    Thu: 0,
+    Fri: 0,
+    Sat: 0,
+    Sun: 0,
+  };
+
+  
+  rows.forEach((row) => {
+    const date = new Date(row.date);
+    const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+    if (weekMap[dayName] !== undefined) {
+      weekMap[dayName] += row.protein;
+    }
   });
 
-  return NextResponse.json({
-    week,
-    protein: totals,
-  });
+  const week = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const protein = week.map((day) => weekMap[day]);
+
+  return Response.json({ week, protein });
 }

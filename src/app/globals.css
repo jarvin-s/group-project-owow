@@ -23,3 +23,11 @@
 .animate-fade-in {
   animation: fade-in 0.3s ease-out;
 }
+
+
+.pixelify-chart-text {
+  font-family: var(--font-pixelify-sans);
+  font-size: 16px;
+  font-weight: bold;
+  fill: black; /* SVG text color */
+}
