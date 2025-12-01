@@ -136,7 +136,7 @@ export default function ProgressPage() {
               <strong>Summary:</strong>
               <br />
               Consistent Days: {consistentDays}/{data.length} <br />
-              Avg Protein: {Math.round(avgProtein)}g/day
+              Avg Protein: {Math.round(avgProtein)}g
             </p>
           ) : (
             <p className="text-sm leading-relaxed text-black text-center">
