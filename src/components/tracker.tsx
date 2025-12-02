@@ -83,8 +83,7 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Food[]>([]);
   const [showPopup, setShowPopup] = useState(false);
-  const [loggedFoods, setLoggedFoods] = useState<string[]>([]);
-  
+
   const checkGoalCompletion = async (calories: number) => {
     if (calories >= DAILY_GOAL) {
       await incrementGoalCompletions();
@@ -109,7 +108,6 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
       stored.push(formatted);
 
       localStorage.setItem(key, JSON.stringify(stored));
-      setLoggedFoods(stored);
     }
 
     setShowPopup(true);
@@ -259,7 +257,6 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
               results.map((item, index) => {
                 const isEven = index % 2 === 0;
                 const buttonColor = isEven ? "bg-[#A2A2A2]" : "bg-[#DEDBD8]";
-                const rowBgColor = isEven ? "bg[#DEDBD8]" : "bg-[#A2A2A2]";
 
                 return (
                   <div

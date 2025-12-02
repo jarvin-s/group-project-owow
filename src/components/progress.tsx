@@ -57,21 +57,27 @@ export default function ProgressPage() {
     <div
       className={`flex flex-col items-center justify-center h-screen bg-white ${pixelifySans.className}`}
     >
-      <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto">
-        <h1 className="text-4xl font-bold text-black mb-6">
-          Progress & History
-        </h1>
+      <div className="bg-white w-[375px] h-[700px] hide-scrollbar rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto">
+        <div className="flex items-center justify-evenly mb-4 mt-2">
+          <button
+            onClick={() => router.push("/")}
+            className="text-black text-lg font-bold cursor-pointer"
+          >
+            ← Back
+          </button>
+          <h1 className="text-2xl font-bold text-black">Progress & History</h1>
+        </div>
 
         {/* Main Progress Section */}
-        <div className="bg-[#A2A2A2] p-6 rounded-3xl shadow-lg flex flex-col gap-4 mb-6">
-          <div className="mb-4 text-lg font-semibold text-black">
-            Your progress:
+        <div className="bg-[#A2A2A2] p-6 rounded-3xl shadow-lg flex flex-col gap-4 mb-6 border border-black">
+          <div className="mb-4 text-xl font-semibold text-black">
+            Your progress
           </div>
 
           {/* Weekly / Monthly Buttons */}
           <div className="flex gap-4 mb-4">
             <button
-              className={`px-4 py-2 rounded-xl border border-black font-bold ${
+              className={`px-4 py-2 rounded-xl border border-black font-bold cursor-pointer ${
                 view === "weekly"
                   ? "bg-black text-white"
                   : "bg-white text-black"
@@ -81,7 +87,7 @@ export default function ProgressPage() {
               Weekly
             </button>
             <button
-              className={`px-4 py-2 rounded-xl border border-black font-bold ${
+              className={`px-4 py-2 rounded-xl border border-black font-bold cursor-pointer ${
                 view === "monthly"
                   ? "bg-black text-white"
                   : "bg-white text-black"
