@@ -50,10 +50,6 @@ export default function FlipBoard() {
   .order("id")
   .limit(4);
 
-console.log("🔥 Supabase ERROR:", error);
-console.log("🔥 Supabase DATA:", users);
-
-
       if (!users) return;
 
       // Update the text list state

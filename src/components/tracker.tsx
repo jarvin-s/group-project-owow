@@ -5,6 +5,11 @@ import { supabase } from "@/lib/supabaseClient"; // Ensure this path is correct
 import { Pixelify_Sans } from "next/font/google";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import {
+  getDailyCalories,
+  updateDailyCalories,
+  incrementGoalCompletions,
+} from "@/lib/userProgress";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -200,7 +205,7 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
       className={`flex items-center justify-center min-h-screen bg-gray-200 p-4 ${pixelify.className}`}
     >
       <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto hide-scrollbar">
-        {/* Back button and date */}
+        {/* Back button */}
         <div className="flex items-center justify-between mb-4 mt-2">
           <button
             onClick={() => router.push("/tracker")}
@@ -214,7 +219,6 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
         <div className="w-full mb-4">
           <div className="bg-black py-6 flex flex-col justify-center items-center rounded-3xl gap-4">
             <h1 className="text-base text-white w-[90%]">{mealName}</h1>
-
             <div className="w-[90%]">
               <div className="flex items-center gap-2 bg-gray-100 px-4 py-3 rounded-full shadow-sm border">
                 <input
@@ -228,17 +232,13 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
             </div>
           </div>
 
+          {/* Popular foods */}
           {search.length === 0 && (
             <>
               <h1 className="text-2xl text-black w-[90%] mt-4">Popular</h1>
 
-              {popularFoods.map((food, index) => (
-                <div
-                  key={food.id}
-                  className={`w-full ${index === 0 ? "mb-4" : "mt-9"} ${
-                    index === popularFoods.length - 1 ? "mb-4" : ""
-                  }`}
-                >
+              {popularFoods.map((food) => (
+                <div key={food.id} className="w-full mt-5 mb-10">
                   <div
                     className={`${food.bgColor} rounded-[1.875rem] w-full h-28 mt-3 flex items-center relative px-3`}
                   >
@@ -251,40 +251,22 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
                     />
 
                     <div className="flex flex-col mb-10">
-                      <h1 className="text-[1.2rem] text-black w-full">
-                        {food.name}
-                      </h1>
-                      <p className="text-sm text-black w-[90%]">
-                        {food.serving}
-                      </p>
+                      <h1 className="text-[1.2rem] text-black">{food.name}</h1>
+                      <p className="text-sm text-black">{food.serving}</p>
                     </div>
 
-                    <div
-                      className={`flex flex-col ${
-                        food.id === 2 || food.id === 4 ? "ml-11" : "ml-7"
-                      }`}
-                    >
-                      <h1 className="text-[2rem] text-black w-full">
+                    <div className="flex flex-col ml-7">
+                      <h1 className="text-[2rem] text-black">
                         {food.calories}
                       </h1>
-                      <p className="text-[1.2rem] text-black w-[90%] mt-[-9px]">
-                        kcal
-                      </p>
+                      <p className="text-[1.2rem] text-black mt-[-9px]">kcal</p>
                     </div>
 
                     <button
-                      onClick={addCalories}
+                      onClick={() => addCalories(food.name, food.serving)}
                       className={`w-12 h-10 cursor-pointer ${food.buttonColor} rounded-[0.9375rem] flex items-center justify-center absolute right-8 -bottom-5 shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
                     >
-                      <span
-                        className={`text-2xl ${
-                          food.buttonColor === "bg-[#DEDBD8]"
-                            ? "text-black"
-                            : ""
-                        }`}
-                      >
-                        +
-                      </span>
+                      <span className="text-2xl text-black">+</span>
                     </button>
                   </div>
                 </div>
@@ -293,28 +275,32 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
           )}
         </div>
 
+        {/* Search Results */}
         {search.length > 0 && (
           <div className="w-full mt-4">
-            <h1 className="text-[1.2rem] text-black w-full mb-2">Results</h1>
+            <h1 className="text-[1.2rem] text-black mb-2">Results</h1>
+
             {results.length > 0 ? (
               results.map((item, index) => {
                 const isEven = index % 2 === 0;
                 const buttonColor = isEven ? "bg-[#A2A2A2]" : "bg-[#DEDBD8]";
-                const rowBgColor = isEven ? "bg-[#DEDBD8]" : "bg-[#A2A2A2]";
 
                 return (
                   <div
                     key={item.id}
-                    className={`text-sm text-black flex items-center justify-between ${rowBgColor} rounded-[0.9375rem] p-3 mb-3 h-20`}
+                    className={`text-sm text-black flex items-center justify-between ${
+                      isEven ? "bg-[#DEDBD8]" : "bg-[#A2A2A2]"
+                    } rounded-[0.9375rem] p-3 mb-3 h-20`}
                   >
                     <div>
-                      <p className=" text-[1.3rem]">{item.name}</p>
+                      <p className="text-[1.3rem]">{item.name}</p>
                       <p>{item.serving}</p>
                     </div>
 
+                    {/* UPDATED — passes name + serving */}
                     <button
                       className={`cursor-pointer w-10 h-9 ${buttonColor} rounded-[0.9375rem] flex items-center justify-center shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
-                      onClick={addCalories}
+                      onClick={() => addCalories(item.name, item.serving)}
                     >
                       <span className="text-xl text-black">+</span>
                     </button>
@@ -329,7 +315,7 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
           </div>
         )}
 
-        {/* Popup notification */}
+        {/* Popup */}
         {showPopup && (
           <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
             <div className="bg-black border-4 border-white rounded-2xl px-8 py-6 shadow-2xl animate-fade-in">

@@ -60,3 +60,10 @@
   background-color: #fff; /* White (ON state) */
   transform: rotateY(180deg);
 }
+
+.pixelify-chart-text {
+  font-family: var(--font-pixelify-sans);
+  font-size: 16px;
+  font-weight: bold;
+  fill: black; /* SVG text color */
+}
