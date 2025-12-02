@@ -44,11 +44,15 @@ export default function FlipBoard() {
   useEffect(() => {
     const fetchData = async () => {
       // Fetch top 4 users
-      const { data: users } = await supabase
-        .from("leaderboard")
-        .select("*")
-        .order("id")
-        .limit(4);
+      const { data: users, error } = await supabase
+  .from("leaderboard")
+  .select("*")
+  .order("id")
+  .limit(4);
+
+console.log("🔥 Supabase ERROR:", error);
+console.log("🔥 Supabase DATA:", users);
+
 
       if (!users) return;
 
