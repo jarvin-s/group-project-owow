@@ -1,330 +1,180 @@
 "use client";
-
-import { useRef, useEffect, useState } from "react";
-import { Pixelify_Sans } from "next/font/google";
-import {
-  level_1,
-  level_2,
-  level_3,
-  level_4,
-  level_5,
-  level_6,
-  Flower,
-} from "./flowers";
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { Pixelify_Sans } from "next/font/google";
+import { flowers } from "./flowers"; // Your static flowers file
 
+// Initialize the pixel font
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "700"],
 });
 
-const DOT_SIZE = 8;
-const DOT_SPACING = 10;
-const COLS = Math.floor(1280 / DOT_SPACING);
-const ROWS = Math.floor(720 / DOT_SPACING);
+const BOARD_W = 84;
+const BOARD_H = 28;
+// Center positions for the 4 flowers on the grid
+const USER_POSITIONS = [11, 32, 53, 74];
 
-const getCurrentLevel = (completions: number): Flower => {
-  if (completions === 0) return level_1;
-  if (completions === 1) return level_2;
-  if (completions === 2) return level_3;
-  if (completions === 3) return level_4;
-  if (completions === 4) return level_5;
-  return level_6;
-};
+export default function FlipBoard() {
+  const [grid, setGrid] = useState<number[][]>(
+    Array.from({ length: BOARD_H }, () => Array(BOARD_W).fill(0))
+  );
+  
+  // We store the user data here to display in the text list
+  const [usersData, setUsersData] = useState<any[]>([]);
 
-interface LeaderboardEntry {
-  id: number;
-  name: string;
-}
-
-interface UserFlower {
-  user_id: string;
-  first_name: string;
-  goal_completions: number;
-  daily_calories: number;
-  daily_calories_goal: number;
-  flower: Flower;
-}
-
-/**
- * Calculate which frame to show based on daily calories progress
- * Each frame represents 16.6667% (1/6) of the daily goal
- */
-const getFrameFromCalories = (
-  dailyCalories: number,
-  dailyGoal: number,
-  totalFrames: number
-): number => {
-  if (dailyGoal === 0) return 0;
-  const progress = dailyCalories / dailyGoal;
-  const frameProgress = progress / (1 / 6);
-  const frameIndex = Math.floor(frameProgress);
-  return Math.min(Math.max(frameIndex, 0), totalFrames - 1);
-};
-
-export default function Flipboard() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [userFlowers, setUserFlowers] = useState<UserFlower[]>([]);
-
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
-
-  useEffect(() => {
-    async function fetchLeaderboard() {
-      const { data } = await supabase.from("leaderboard").select("id, name");
-      if (data) setEntries(data);
+  // --- FLOWER LOGIC ---
+  const getFlowerShape = (user: any) => {
+    const lvl = user.level || 1;
+    // 1. Static Levels 1-6
+    if (lvl <= 6) {
+      // @ts-ignore
+      const staticFrames = flowers[`level_${lvl}`];
+      if (staticFrames && staticFrames.length > 0) {
+        return staticFrames[staticFrames.length - 1];
+      }
+    } 
+    // 2. AI Levels 7+
+    if (lvl > 6 && user.flower_data) {
+      return user.flower_data;
     }
-    fetchLeaderboard();
-  }, []);
+    return null;
+  };
 
   useEffect(() => {
-    async function fetchUserFlowers() {
-      const { data, error } = await supabase
-        .from("user_progress")
-        .select(
-          `
-          user_id,
-          goal_completions,
-          daily_calories,
-          daily_calories_goal,
-          users!inner(first_name)
-        `
-        )
-        .order("goal_completions", { ascending: false })
-        .limit(4);
+    const fetchData = async () => {
+      // Fetch top 4 users
+      const { data: users, error } = await supabase
+  .from("leaderboard")
+  .select("*")
+  .order("id")
+  .limit(4);
 
-      if (error) {
-        console.error("Error fetching user flowers:", error);
-        return;
-      }
+      if (!users) return;
 
-      if (data) {
-        const flowers: UserFlower[] = data
-          .map((item: unknown) => {
-            const progressItem = item as {
-              user_id: string;
-              goal_completions: number;
-              daily_calories: number;
-              daily_calories_goal: number;
-              users: { first_name: string } | { first_name: string }[] | null;
-            };
+      // Update the text list state
+      setUsersData(users);
 
-            const usersData = Array.isArray(progressItem.users)
-              ? progressItem.users[0]
-              : progressItem.users;
-            const first_name = usersData?.first_name || "";
+      // --- DRAWING THE GRID ---
+      const g = Array.from({ length: BOARD_H }, () => Array(BOARD_W).fill(0));
+      const groundY = BOARD_H - 4;
 
-            if (!first_name) return null;
+      users.forEach((user, index) => {
+        const cx = USER_POSITIONS[index]; 
+        if (!cx) return;
 
-            const flower = getCurrentLevel(progressItem.goal_completions || 0);
-
-            return {
-              user_id: progressItem.user_id,
-              first_name: first_name,
-              goal_completions: progressItem.goal_completions || 0,
-              daily_calories: progressItem.daily_calories || 0,
-              daily_calories_goal: progressItem.daily_calories_goal || 2000,
-              flower: flower,
-            };
-          })
-          .filter(
-            (item: UserFlower | null): item is UserFlower => item !== null
-          );
-
-        setUserFlowers(flowers);
-      }
-    }
-    fetchUserFlowers();
-  }, []);
-
-  useEffect(() => {
-    const handleLevelUpdate = async () => {
-      const { data, error } = await supabase
-        .from("user_progress")
-        .select(
-          `
-          user_id,
-          goal_completions,
-          daily_calories,
-          daily_calories_goal,
-          users!inner(first_name)
-        `
-        )
-        .order("goal_completions", { ascending: false })
-        .limit(4);
-
-      if (!error && data) {
-        const flowers: UserFlower[] = data
-          .map((item: unknown) => {
-            const progressItem = item as {
-              user_id: string;
-              goal_completions: number;
-              daily_calories: number;
-              daily_calories_goal: number;
-              users: { first_name: string } | { first_name: string }[] | null;
-            };
-
-            const usersData = Array.isArray(progressItem.users)
-              ? progressItem.users[0]
-              : progressItem.users;
-            const first_name = usersData?.first_name || "";
-
-            if (!first_name) return null;
-
-            const flower = getCurrentLevel(progressItem.goal_completions || 0);
-
-            return {
-              user_id: progressItem.user_id,
-              first_name: first_name,
-              goal_completions: progressItem.goal_completions || 0,
-              daily_calories: progressItem.daily_calories || 0,
-              daily_calories_goal: progressItem.daily_calories_goal || 2000,
-              flower: flower,
-            };
-          })
-          .filter(
-            (item: UserFlower | null): item is UserFlower => item !== null
-          );
-
-        setUserFlowers(flowers);
-      }
-    };
-
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible") {
-        handleLevelUpdate();
-      }
-    };
-
-    window.addEventListener("levelUpdated", handleLevelUpdate);
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    const channel = supabase
-      .channel("user_progress_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "user_progress",
-        },
-        () => {
-          handleLevelUpdate();
+        // A. POT
+        for (let x = cx - 3; x <= cx + 3; x++) if(g[groundY]) g[groundY][x] = 1;
+        for (let x = cx - 4; x <= cx + 4; x++) if(g[groundY - 1]) g[groundY - 1][x] = 1;
+        for (let x = cx - 5; x <= cx + 5; x++) if(g[groundY - 2]) g[groundY - 2][x] = 1;
+        for (let x = cx - 4; x <= cx + 4; x++) if(g[groundY - 3]) g[groundY - 3][x] = 1;
+        if(g[groundY - 2]) {
+            g[groundY - 2][cx - 6] = 1;
+            g[groundY - 2][cx + 6] = 1;
         }
-      )
-      .subscribe();
 
-    return () => {
-      window.removeEventListener("levelUpdated", handleLevelUpdate);
-      document.removeEventListener("visibilitychange", handleVisibility);
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = 1280;
-    canvas.height = 720;
-
-    const draw = () => {
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.fillStyle = "#222";
-      for (let row = 0; row < ROWS; row++) {
-        for (let col = 0; col < COLS; col++) {
-          const x = col * DOT_SPACING + DOT_SPACING / 2;
-          const y = row * DOT_SPACING + DOT_SPACING / 2;
-          ctx.beginPath();
-          ctx.arc(x, y, DOT_SIZE / 2, 0, Math.PI * 2);
-          ctx.fill();
+        // B. STEM
+        let progress = 0;
+        if (user.kcal_goal > 0) {
+            progress = Math.min(Math.max(user.kcal_current / user.kcal_goal, 0), 1);
         }
-      }
+        const maxStemH = 8;
+        const stemH = Math.floor(progress * maxStemH);
 
-      const flowersPerRow = 2;
-      const flowerSpacingX = 300;
-      const flowerSpacingY = 200;
-      const flowerStartX = 150;
-      const flowerStartY = 100;
+        for (let i = 0; i < stemH; i++) {
+            if(g[groundY - 4 - i]) g[groundY - 4 - i][cx] = 1;
+        }
 
-      userFlowers.slice(0, 4).forEach((userFlower, index) => {
-        const row = Math.floor(index / flowersPerRow);
-        const col = index % flowersPerRow;
-        const flowerX = flowerStartX + col * flowerSpacingX;
-        const flowerY = flowerStartY + row * flowerSpacingY;
-        const flowerColOffset = Math.floor(flowerX / DOT_SPACING);
-        const flowerRowOffset = Math.floor(flowerY / DOT_SPACING);
+        // C. FLOWER
+        const flowerGrid = getFlowerShape(user);
+        if (flowerGrid) {
+            const rows = flowerGrid.length;    
+            const cols = flowerGrid[0].length; 
+            const visualStemH = Math.max(stemH, 2); 
+            const topY = groundY - 4 - visualStemH - Math.floor(rows / 2); 
+            const leftX = cx - Math.floor(cols / 2);
 
-        ctx.fillStyle = "#fff";
-        const currentFrame = getFrameFromCalories(
-          userFlower.daily_calories,
-          userFlower.daily_calories_goal,
-          userFlower.flower.length
-        );
-        for (let flowerRow = 0; flowerRow < 12; flowerRow++) {
-          for (let flowerCol = 0; flowerCol < 12; flowerCol++) {
-            if (userFlower.flower[currentFrame][flowerRow][flowerCol] === 1) {
-              const canvasRow = flowerRowOffset + flowerRow;
-              const canvasCol = flowerColOffset + flowerCol;
-              if (
-                canvasRow >= 0 &&
-                canvasRow < ROWS &&
-                canvasCol >= 0 &&
-                canvasCol < COLS
-              ) {
-                const x = canvasCol * DOT_SPACING + DOT_SPACING / 2;
-                const y = canvasRow * DOT_SPACING + DOT_SPACING / 2;
-                ctx.beginPath();
-                ctx.arc(x, y, DOT_SIZE / 2, 0, Math.PI * 2);
-                ctx.fill();
-              }
+            for(let r=0; r < rows; r++) {
+                for(let c=0; c < cols; c++) {
+                    if (flowerGrid[r] && flowerGrid[r][c] === 1) {
+                         const y = topY + r;
+                         const x = leftX + c;
+                         if (g[y] && g[y][x] !== undefined) g[y][x] = 1;
+                    }
+                }
             }
-          }
         }
-
-        const flowerBottomY = flowerY + 12 * DOT_SPACING + 30;
-        const flowerCenterX = flowerX + (10 * DOT_SPACING) / 2;
-
-        ctx.font = "bold 30px 'Pixelify Sans', sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        ctx.fillStyle = "#fff";
-        ctx.fillText(userFlower.first_name, flowerCenterX, flowerBottomY);
       });
-
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 60px 'Pixelify Sans', sans-serif";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-
-      const leaderboardStartX = 800;
-      const titleY = 50;
-      ctx.fillText("LEADERBOARD", leaderboardStartX, titleY);
-
-      ctx.font = "40px 'Pixelify Sans', sans-serif";
-      const startY = titleY + 100;
-      const lineHeight = 60;
-
-      entries.forEach((entry, index) => {
-        const y = startY + index * lineHeight;
-        ctx.fillText(`${entry.id}. ${entry.name}`, leaderboardStartX, y);
-      });
+      setGrid(g);
     };
 
-    draw();
-  }, [userFlowers, entries]);
+    const interval = setInterval(fetchData, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div
-      className={`flex items-center justify-center p-4 ${pixelify.className}`}
-    >
-      <div className="w-[1280px] h-[720px] bg-black border-4 border-white">
-        <canvas ref={canvasRef} className="w-full h-full" />
+    <div className={`min-h-screen bg-black flex items-center justify-center p-8 gap-12 ${pixelify.className}`}>
+      
+      {/* LEFT SIDE: THE VISUAL GARDEN (Flip-dot Grid) */}
+      <div className="relative border-4 border-white p-4 rounded-xl bg-black shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+        <div
+            style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${BOARD_W}, 10px)`,
+            gap: "2px",
+            }}
+        >
+            {grid.map((row, y) =>
+            row.map((cell, x) => (
+                <div key={`${y}-${x}`} className="w-[10px] h-[10px] flip-dot-wrapper">
+                <div className={`flip-dot ${cell ? "is-flipped" : ""}`}>
+                    <div className="flip-dot-face flip-dot-front" />
+                    <div className="flip-dot-face flip-dot-back" />
+                </div>
+                </div>
+            ))
+            )}
+        </div>
       </div>
+
+      {/* RIGHT SIDE: THE TEXT LEADERBOARD */}
+      <div className="text-white w-80">
+        <h1 className="text-5xl font-bold mb-8 tracking-widest border-b-4 border-white pb-4">
+          LEADERBOARD
+        </h1>
+        
+        <div className="flex flex-col gap-6">
+          {usersData.length === 0 ? (
+            <p className="text-gray-500 animate-pulse">Scanning Garden...</p>
+          ) : (
+            usersData.map((user, index) => (
+              <div key={user.id} className="flex items-center justify-between group">
+                <div className="flex items-center gap-4">
+                  <span className="text-3xl text-gray-400">#{index + 1}</span>
+                  <div>
+                    <h2 className="text-2xl font-bold uppercase">{user.name}</h2>
+                    <p className="text-sm text-gray-400">Level {user.level || 1}</p>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <span className="text-xl block">
+                    {user.kcal_current}
+                    <span className="text-xs text-gray-500 ml-1">kcal</span>
+                  </span>
+                  <div className="w-20 h-2 bg-gray-800 rounded-full mt-1 overflow-hidden">
+                     <div 
+                       className="h-full bg-white transition-all duration-500" 
+                       style={{ width: `${Math.min((user.kcal_current / user.kcal_goal) * 100, 100)}%` }} 
+                     />
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
     </div>
   );
 }

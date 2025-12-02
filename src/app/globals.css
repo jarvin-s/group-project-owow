@@ -24,6 +24,42 @@
   animation: fade-in 0.3s ease-out;
 }
 
+/* --- ADD THIS TO THE BOTTOM --- */
+
+/* FLIPBOARD ANIMATIONS */
+.flip-dot-wrapper {
+  perspective: 600px; /* Gives the 3D depth */
+}
+
+.flip-dot {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  border-radius: 50%;
+}
+
+.is-flipped {
+  transform: rotateY(180deg); /* The actual flip action */
+}
+
+.flip-dot-face {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden; /* Hides the back when facing away */
+  border-radius: 50%;
+}
+
+.flip-dot-front {
+  background-color: #222; /* Dark Grey (OFF state) */
+}
+
+.flip-dot-back {
+  background-color: #fff; /* White (ON state) */
+  transform: rotateY(180deg);
+}
 
 .pixelify-chart-text {
   font-family: var(--font-pixelify-sans);
