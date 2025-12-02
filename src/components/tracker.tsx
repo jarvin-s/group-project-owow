@@ -11,7 +11,6 @@ import {
   incrementGoalCompletions,
 } from "@/lib/userProgress";
 
-
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -84,7 +83,8 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Food[]>([]);
   const [showPopup, setShowPopup] = useState(false);
-
+  const [loggedFoods, setLoggedFoods] = useState<string[]>([]);
+  
   const checkGoalCompletion = async (calories: number) => {
     if (calories >= DAILY_GOAL) {
       await incrementGoalCompletions();
@@ -93,7 +93,7 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
     }
   };
 
-  const addCalories = async () => {
+  const addCalories = async (foodName: string, serving: string) => {
     const currentCalories = await getDailyCalories();
     const newCalories = currentCalories + CALORIES_PER_FOOD;
     await updateDailyCalories(newCalories);
@@ -101,9 +101,7 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
     await checkGoalCompletion(newCalories);
 
     if (foodName) {
-      const formatted = serving
-        ? `${foodName} • ${serving}`
-        : foodName;
+      const formatted = serving ? `${foodName} • ${serving}` : foodName;
 
       const key = `foods_${mealType}`;
       const stored = JSON.parse(localStorage.getItem(key) || "[]");
@@ -182,7 +180,6 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
       className={`flex items-center justify-center min-h-screen bg-gray-200 p-4 ${pixelify.className}`}
     >
       <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto hide-scrollbar">
-
         {/* Back button */}
         <div className="flex items-center justify-between mb-4 mt-2">
           <button
@@ -217,36 +214,37 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
 
               {popularFoods.map((food) => (
                 <div key={food.id} className="w-full mt-5 mb-10">
-  <div
-    className={`${food.bgColor} rounded-[1.875rem] w-full h-28 mt-3 flex items-center relative px-3`}
-  >
-    <Image
-      src={food.image}
-      alt={food.name}
-      width={90}
-      height={90}
-      className="rounded-lg"
-    />
+                  <div
+                    className={`${food.bgColor} rounded-[1.875rem] w-full h-28 mt-3 flex items-center relative px-3`}
+                  >
+                    <Image
+                      src={food.image}
+                      alt={food.name}
+                      width={90}
+                      height={90}
+                      className="rounded-lg"
+                    />
 
-    <div className="flex flex-col mb-10">
-      <h1 className="text-[1.2rem] text-black">{food.name}</h1>
-      <p className="text-sm text-black">{food.serving}</p>
-    </div>
+                    <div className="flex flex-col mb-10">
+                      <h1 className="text-[1.2rem] text-black">{food.name}</h1>
+                      <p className="text-sm text-black">{food.serving}</p>
+                    </div>
 
-    <div className="flex flex-col ml-7">
-      <h1 className="text-[2rem] text-black">{food.calories}</h1>
-      <p className="text-[1.2rem] text-black mt-[-9px]">kcal</p>
-    </div>
+                    <div className="flex flex-col ml-7">
+                      <h1 className="text-[2rem] text-black">
+                        {food.calories}
+                      </h1>
+                      <p className="text-[1.2rem] text-black mt-[-9px]">kcal</p>
+                    </div>
 
-    <button
-      onClick={() => addCalories(food.name, food.serving)}
-      className={`w-12 h-10 cursor-pointer ${food.buttonColor} rounded-[0.9375rem] flex items-center justify-center absolute right-8 -bottom-5 shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
-    >
-      <span className="text-2xl text-black">+</span>
-    </button>
-  </div>
-</div>
-
+                    <button
+                      onClick={() => addCalories(food.name, food.serving)}
+                      className={`w-12 h-10 cursor-pointer ${food.buttonColor} rounded-[0.9375rem] flex items-center justify-center absolute right-8 -bottom-5 shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
+                    >
+                      <span className="text-2xl text-black">+</span>
+                    </button>
+                  </div>
+                </div>
               ))}
             </>
           )}
@@ -277,12 +275,8 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
 
                     {/* UPDATED — passes name + serving */}
                     <button
-                      className={`cursor-pointer w-10 h-9 ${
-                        buttonColor
-                      } rounded-[0.9375rem] flex items-center justify-center shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
-                      onClick={() =>
-                        addCalories(item.name, item.serving)
-                      }
+                      className={`cursor-pointer w-10 h-9 ${buttonColor} rounded-[0.9375rem] flex items-center justify-center shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
+                      onClick={() => addCalories(item.name, item.serving)}
                     >
                       <span className="text-xl text-black">+</span>
                     </button>
@@ -313,7 +307,6 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
             </div>
           </div>
         )}
-
       </div>
     </div>
   );

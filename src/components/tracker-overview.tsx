@@ -28,22 +28,22 @@ const meals: Meal[] = [
 export default function TrackerOverview() {
   const router = useRouter();
   const dailyGoal = 1800;
-
   const [totalCalories, setTotalCalories] = useState(0);
-
-  // NEW: stores foods for each meal
   const [mealFoods, setMealFoods] = useState<Record<string, string[]>>({});
 
-  // Load foods for each meal
   useEffect(() => {
     const foodsByMeal: Record<string, string[]> = {};
 
     meals.forEach((meal) => {
-      const stored = JSON.parse(localStorage.getItem(`foods_${meal.id}`) || "[]");
+      const stored = JSON.parse(
+        localStorage.getItem(`foods_${meal.id}`) || "[]"
+      );
       foodsByMeal[meal.id] = stored;
     });
 
-    setMealFoods(foodsByMeal);
+    setTimeout(() => {
+      setMealFoods(foodsByMeal);
+    }, 500);
   }, []);
 
   useEffect(() => {
@@ -85,10 +85,22 @@ export default function TrackerOverview() {
     const date = new Date();
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const months = [
-      "Jan","Feb","Mar","Apr","May","Jun",
-      "Jul","Aug","Sep","Oct","Nov","Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
     ];
-    return `${days[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]}`;
+    return `${days[date.getDay()]} ${date.getDate()} ${
+      months[date.getMonth()]
+    }`;
   }, []);
 
   const progressPercentage = Math.round((totalCalories / dailyGoal) * 100);
@@ -98,16 +110,21 @@ export default function TrackerOverview() {
   };
 
   return (
-    <div className={`flex items-center justify-center min-h-screen bg-gray-200 p-4 ${pixelify.className}`}>
+    <div
+      className={`flex items-center justify-center min-h-screen bg-gray-200 p-4 ${pixelify.className}`}
+    >
       <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto hide-scrollbar">
-
         {/* Date */}
-        <div className="text-base text-black mb-2 text-right">{currentDate}</div>
+        <div className="text-base text-black mb-2 text-right">
+          {currentDate}
+        </div>
 
         {/* Daily calories summary */}
         <div className="bg-black rounded-3xl p-6 mb-4">
           <h2 className="text-sm text-white mb-2">Daily calories</h2>
-          <h1 className="text-4xl font-bold text-white mb-4">{totalCalories} kcal</h1>
+          <h1 className="text-4xl font-bold text-white mb-4">
+            {totalCalories} kcal
+          </h1>
 
           <div className="relative w-full h-6 bg-gray-700 rounded-full overflow-hidden">
             <div
@@ -149,41 +166,37 @@ export default function TrackerOverview() {
               </div>
 
               {/* Meal info */}
-          <div className="flex-1">
-  <h3 className="text-[1.2rem] text-black w-full mb-2 leading-tight">
-    {meal.name}
-  </h3>
+              <div className="flex-1">
+                <h3 className="text-[1.2rem] text-black w-full mb-2 leading-tight">
+                  {meal.name}
+                </h3>
 
-  <p className="text-sm text-black w-full mb-3 leading-tight">
-    {(() => {
-      const items = mealFoods[meal.id] || [];
+                <p className="text-sm text-black w-full mb-3 leading-tight">
+                  {(() => {
+                    const items = mealFoods[meal.id] || [];
 
-      if (items.length === 0) return "No items logged yet";
+                    if (items.length === 0) return "No items logged yet";
 
-      // Clean names (remove servings)
-      const clean = items.map((f) => {
-        let n = f.split("•")[0];
-        n = n.replace(/\d.*$/, "");
-        return n.trim();
-      });
+                    // Clean names (remove servings)
+                    const clean = items.map((f) => {
+                      let n = f.split("•")[0];
+                      n = n.replace(/\d.*$/, "");
+                      return n.trim();
+                    });
 
-      if (clean.length <= 2) return clean.join(", ");
+                    if (clean.length <= 2) return clean.join(", ");
 
-      return `${clean[0]}, ${clean[1]} …`;
-    })()}
-  </p>
-</div>
-
-
-
-
+                    return `${clean[0]}, ${clean[1]} …`;
+                  })()}
+                </p>
+              </div>
 
               {/* Add button */}
               <button
                 className={`w-12 h-10 rounded-[0.9375rem] flex items-center justify-center absolute right-8 top-24
                   shadow-[0_8px_4px_rgba(0,0,0,0.30)] cursor-pointer ${
-                  index % 2 === 0 ? "bg-[#A2A2A2]" : "bg-[#DEDBD8]"
-                }`}
+                    index % 2 === 0 ? "bg-[#A2A2A2]" : "bg-[#DEDBD8]"
+                  }`}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleMealClick(meal.id);
@@ -194,7 +207,6 @@ export default function TrackerOverview() {
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );

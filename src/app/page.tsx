@@ -1,10 +1,8 @@
 "use client";
 
-import { useAuth, signOut } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 import { Pixelify_Sans } from "next/font/google";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 const pixelifySans = Pixelify_Sans({
   variable: "--font-pixelify-sans",
@@ -13,20 +11,6 @@ const pixelifySans = Pixelify_Sans({
 
 export default function Home() {
   const { user } = useAuth();
-  const router = useRouter();
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    setLoggingOut(true);
-    router.push("/");
-    try {
-      await signOut();
-    } catch (err) {
-      console.error("Error logging out:", err);
-    } finally {
-      setLoggingOut(false);
-    }
-  };
 
   return (
     <>
