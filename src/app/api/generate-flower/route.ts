@@ -10,69 +10,116 @@ const supabase = createClient(
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
 // ------------------------------------------------------------
-// Completely Random, Fully Generated From Scratch
+// FLOWER SHAPES + STYLE VARIATIONS
+// ------------------------------------------------------------
+const BASE_SHAPES = [
+  "round flower",
+  "wide flower",
+  "tall flower",
+  "starburst flower",
+  "curved petal flower",
+  "bloom with arches",
+  "soft cloud flower",
+  "circular petal ring",
+  "triangular petal bloom",
+  "asymmetric organic flower"
+];
+
+const STYLES = [
+  "with hollow petals",
+  "with thick petals",
+  "with thin petals",
+  "with spiral centers",
+  "with dotted accents",
+  "with broken edges",
+  "with double layer petals",
+  "with scattered pixels",
+  "with uneven petals",
+  "with stacked shapes"
+];
+
+// ------------------------------------------------------------
+// POST — GENERATE FLOWER
 // ------------------------------------------------------------
 export async function POST(req: Request) {
   try {
     const { employeeId, level } = await req.json();
 
+    const base = BASE_SHAPES[level % BASE_SHAPES.length];
+    const style = STYLES[(level * 3) % STYLES.length];
+    const selectedShape = `${base} ${style}`;
+
     const noiseSeed =
-      ((employeeId * 912367 + level * 81231 + 777) % 999999) + 1;
+      ((employeeId * 1234567 + level * 98765 + 4321) % 999999) + 1;
 
-    console.log(`🌼 Generating fresh flower | user ${employeeId} | level ${level}`);
+    console.log("🌸 USER:", employeeId, "LEVEL:", level);
+    console.log("🌼 SHAPE:", selectedShape);
+    console.log("🎲 SEED:", noiseSeed);
 
-    // Load stable working Gemini model
+    // ------------------------------------------------------------
+    // GEMINI MODEL
+    // ------------------------------------------------------------
     const model = genAI.getGenerativeModel({
       model: "gemini-pro",
       generationConfig: { temperature: 1.0 }
     });
 
     // ------------------------------------------------------------
-    // NEW PROMPT → Creates 100% NEW FLOWER, no diamond, no template
+    // PROMPT
     // ------------------------------------------------------------
     const prompt = `
-Return ONLY a 13x13 JSON array of 0s and 1s.
+Return ONLY a 13x13 JSON array containing 0s and 1s.
 
-Create a COMPLETELY ORIGINAL pixel-art flower.
-It must NOT resemble diamonds, triangles, arrows, or symmetric icons.
+Draw a new pixel-art flower:
+"${selectedShape}"
 
 Rules:
-- Center the flower naturally.
-- Use creative, organic, or abstract petal shapes.
-- It may include or omit a stem.
-- It may be round, chaotic, clustered, asymmetric, ring-like, layered — anything unique.
+- Center the flower.
 - Use 1 for filled pixels, 0 for empty.
-- Apply random pixel mutations (10–20 toggles) using seed ${noiseSeed}.
-- Do NOT return text, labels, comments, or formatting — ONLY the JSON array.
-    `;
+- After drawing, flip 6–12 random pixels using seed ${noiseSeed}.
+- Do NOT explain anything.
+- Output ONLY the JSON array.
+`;
 
-    // Call Gemini
     const result = await model.generateContent(prompt);
-    if (!result?.response) throw new Error("Empty response from AI");
+
+    if (!result?.response) throw new Error("Empty AI response");
 
     const raw = result.response.text().trim();
-    console.log("🌺 AI RAW OUTPUT:", raw);
+    console.log("🧪 RAW AI OUTPUT:", raw);
 
-    let flowerGrid;
+    let flowerData;
     try {
-      flowerGrid = JSON.parse(raw);
+      flowerData = JSON.parse(raw);
     } catch (err) {
-      console.error("🚨 JSON Error: ", raw);
-      throw new Error("AI returned invalid JSON.");
+      console.error("❌ JSON PARSE FAILED:", raw);
+      throw new Error("AI output was not valid JSON");
     }
 
-    // Save in Supabase
+    console.log("🌺 FINAL GRID:", flowerData);
+
+    // ------------------------------------------------------------
+    // SAVE TO SUPABASE
+    // ------------------------------------------------------------
     const { error } = await supabase
       .from("leaderboard")
-      .update({ flower_data: flowerGrid })
+      .update({ flower_data: flowerData })
       .eq("id", employeeId);
 
-    if (error) throw error;
+    if (error) {
+      console.error("❌ SUPABASE UPDATE ERROR:", error);
+      throw error;
+    }
+
+    console.log("✅ SAVED FLOWER FOR USER", employeeId);
 
     return NextResponse.json({
       success: true,
-      seed: noiseSeed
+      shape: selectedShape,
+      seed: noiseSeed,
+      flowerData
     });
+
   } catch (error) {
     console.error("🔥 API ERROR:", error);
     return NextResponse.json(
