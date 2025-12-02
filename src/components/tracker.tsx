@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { supabase } from "@/lib/supabaseClient"; // Ensure this path is correct
 import { Pixelify_Sans } from "next/font/google";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,10 @@ const pixelify = Pixelify_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
+
+// --- HARDCODED USER FOR DEMO ---
+// This tracker will act as the first person on your leaderboard
+const CURRENT_USER_ID = 1;
 
 interface Food {
   id: string;
@@ -32,9 +36,6 @@ interface PopularFood {
 }
 
 const CALORIES_PER_FOOD = 250;
-const STORAGE_KEY = "dailyCalories";
-const COMPLETIONS_KEY = "goalCompletions";
-const DAILY_GOAL = 1800;
 
 const popularFoods: PopularFood[] = [
   {
@@ -81,34 +82,66 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
   const [results, setResults] = useState<Food[]>([]);
   const [showPopup, setShowPopup] = useState(false);
 
-  const checkGoalCompletion = (calories: number) => {
-    if (calories >= DAILY_GOAL) {
-      const completions = parseInt(
-        localStorage.getItem(COMPLETIONS_KEY) || "0",
-        10
-      );
-      localStorage.setItem(COMPLETIONS_KEY, (completions + 1).toString());
-      window.dispatchEvent(new Event("levelUpdated"));
+  // --- NEW LOGIC: ADD CALORIES TO DATABASE ---
+  const addCalories = async () => {
+    // 1. Show the UI Popup immediately (so it feels fast)
+    setShowPopup(true);
+    setTimeout(() => setShowPopup(false), 2000);
 
-      localStorage.setItem(STORAGE_KEY, "0");
-      window.dispatchEvent(new Event("caloriesUpdated"));
+    try {
+      // 2. Get current user stats from Supabase
+      const { data: user, error: fetchError } = await supabase
+        .from("leaderboard")
+        .select("*")
+        .eq("id", CURRENT_USER_ID)
+        .single();
+
+      if (fetchError || !user) {
+        console.error("Error fetching user", fetchError);
+        return;
+      }
+
+      // 3. Calculate new totals
+      const newCalories = (user.kcal_current || 0) + CALORIES_PER_FOOD;
+      const goal = user.kcal_goal || 2000;
+
+      // 4. Update Supabase (This makes the stem grow on the Flipboard!)
+      await supabase
+        .from("leaderboard")
+        .update({ kcal_current: newCalories })
+        .eq("id", CURRENT_USER_ID);
+
+      // 5. CHECK FOR LEVEL UP (If goal reached)
+      if (newCalories >= goal) {
+        await handleLevelUp(user);
+      }
+
+    } catch (err) {
+      console.error("Failed to add calories:", err);
     }
   };
 
-  const addCalories = () => {
-    const currentCalories = parseInt(
-      localStorage.getItem(STORAGE_KEY) || "0",
-      10
-    );
-    const newCalories = currentCalories + CALORIES_PER_FOOD;
-    localStorage.setItem(STORAGE_KEY, newCalories.toString());
-    window.dispatchEvent(new Event("caloriesUpdated"));
-    checkGoalCompletion(newCalories);
+  // --- NEW LOGIC: HANDLE LEVEL UP & AI GENERATION ---
+  const handleLevelUp = async (user: any) => {
+    const newLevel = (user.level || 1) + 1;
+    
+    // A. Update Level in Database & Reset Calories
+    await supabase
+      .from("leaderboard")
+      .update({ 
+        level: newLevel,
+        kcal_current: 0 // Reset stem to bottom for new level
+      })
+      .eq("id", CURRENT_USER_ID);
 
-    setShowPopup(true);
-    setTimeout(() => {
-      setShowPopup(false);
-    }, 2000);
+    // B. Trigger AI Generation (Only for Level 7+)
+    if (newLevel > 6) {
+      // Don't await this, let it run in background so UI doesn't freeze
+      fetch("/api/generate-flower", {
+        method: "POST",
+        body: JSON.stringify({ employeeId: CURRENT_USER_ID, level: newLevel }),
+      });
+    }
   };
 
   const mealNames: Record<string, string> = {
@@ -140,16 +173,6 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
     return `${days[date.getDay()]} ${date.getDate()} ${
       months[date.getMonth()]
     }`;
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const currentCalories = parseInt(
-        localStorage.getItem(STORAGE_KEY) || "0",
-        10
-      );
-      checkGoalCompletion(currentCalories);
-    }
   }, []);
 
   useEffect(() => {
