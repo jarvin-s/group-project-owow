@@ -9,6 +9,7 @@ import {
   getDailyCalories,
   updateDailyCalories,
   incrementGoalCompletions,
+  getUserProgress,
 } from "@/lib/userProgress";
 
 const pixelify = Pixelify_Sans({
@@ -16,9 +17,6 @@ const pixelify = Pixelify_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-// --- HARDCODED USER FOR DEMO ---
-// This tracker will act as the first person on your leaderboard
-const CURRENT_USER_ID = 1;
 
 interface Food {
   id: string;
@@ -87,65 +85,30 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
   const [results, setResults] = useState<Food[]>([]);
   const [showPopup, setShowPopup] = useState(false);
 
-  // --- NEW LOGIC: ADD CALORIES TO DATABASE ---
   const addCalories = async () => {
-    // 1. Show the UI Popup immediately (so it feels fast)
     setShowPopup(true);
     setTimeout(() => setShowPopup(false), 2000);
 
     try {
-      // 2. Get current user stats from Supabase
-      const { data: user, error: fetchError } = await supabase
-        .from("leaderboard")
-        .select("*")
-        .eq("id", CURRENT_USER_ID)
-        .single();
-
-      if (fetchError || !user) {
-        console.error("Error fetching user", fetchError);
+      const progress = await getUserProgress();
+      if (!progress) {
+        console.error("Error fetching user progress");
         return;
       }
 
-      // 3. Calculate new totals
-      const newCalories = (user.kcal_current || 0) + CALORIES_PER_FOOD;
-      const goal = user.kcal_goal || 2000;
+      const newCalories = progress.daily_calories + CALORIES_PER_FOOD;
+      const goal = progress.daily_calories_goal;
 
-      // 4. Update Supabase (This makes the stem grow on the Flipboard!)
-      await supabase
-        .from("leaderboard")
-        .update({ kcal_current: newCalories })
-        .eq("id", CURRENT_USER_ID);
+      await updateDailyCalories(newCalories);
 
-      // 5. CHECK FOR LEVEL UP (If goal reached)
+      window.dispatchEvent(new Event("caloriesUpdated"));
+
       if (newCalories >= goal) {
-        await handleLevelUp(user);
+        await incrementGoalCompletions();
+        window.dispatchEvent(new Event("caloriesUpdated"));
       }
-
     } catch (err) {
       console.error("Failed to add calories:", err);
-    }
-  };
-
-  // --- NEW LOGIC: HANDLE LEVEL UP & AI GENERATION ---
-  const handleLevelUp = async (user: any) => {
-    const newLevel = (user.level || 1) + 1;
-    
-    // A. Update Level in Database & Reset Calories
-    await supabase
-      .from("leaderboard")
-      .update({ 
-        level: newLevel,
-        kcal_current: 0 // Reset stem to bottom for new level
-      })
-      .eq("id", CURRENT_USER_ID);
-
-    // B. Trigger AI Generation (Only for Level 7+)
-    if (newLevel > 6) {
-      // Don't await this, let it run in background so UI doesn't freeze
-      fetch("/api/generate-flower", {
-        method: "POST",
-        body: JSON.stringify({ employeeId: CURRENT_USER_ID, level: newLevel }),
-      });
     }
   };
 
@@ -263,7 +226,7 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
                     </div>
 
                     <button
-                      onClick={() => addCalories(food.name, food.serving)}
+                      onClick={() => addCalories()}
                       className={`w-12 h-10 cursor-pointer ${food.buttonColor} rounded-[0.9375rem] flex items-center justify-center absolute right-8 -bottom-5 shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
                     >
                       <span className="text-2xl text-black">+</span>
@@ -300,7 +263,7 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
                     {/* UPDATED — passes name + serving */}
                     <button
                       className={`cursor-pointer w-10 h-9 ${buttonColor} rounded-[0.9375rem] flex items-center justify-center shadow-[0_8px_4px_rgba(0,0,0,0.30)]`}
-                      onClick={() => addCalories(item.name, item.serving)}
+                      onClick={() => addCalories()}
                     >
                       <span className="text-xl text-black">+</span>
                     </button>

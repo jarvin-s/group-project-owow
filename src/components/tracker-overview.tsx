@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Pixelify_Sans } from "next/font/google";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { getDailyCalories } from "@/lib/userProgress";
+import { getDailyCalories, getUserProgress } from "@/lib/userProgress";
 import { supabase } from "@/lib/supabaseClient";
 
 const pixelify = Pixelify_Sans({
@@ -27,7 +27,7 @@ const meals: Meal[] = [
 
 export default function TrackerOverview() {
   const router = useRouter();
-  const dailyGoal = 1800;
+  const [dailyGoal, setDailyGoal] = useState(1800);
   const [totalCalories, setTotalCalories] = useState(0);
   const [mealFoods, setMealFoods] = useState<Record<string, string[]>>({});
 
@@ -50,6 +50,10 @@ export default function TrackerOverview() {
     async function loadCalories() {
       const calories = await getDailyCalories();
       setTotalCalories(calories);
+      const progress = await getUserProgress();
+      if (progress) {
+        setDailyGoal(progress.daily_calories_goal);
+      }
     }
     loadCalories();
 
