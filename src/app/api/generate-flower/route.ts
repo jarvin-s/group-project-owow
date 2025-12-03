@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+const genAI = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY! });
 
 // ------------------------------------------------------------
 // FLOWER SHAPES + STYLE VARIATIONS
@@ -59,40 +59,34 @@ export async function POST(req: Request) {
     // ------------------------------------------------------------
     // GEMINI MODEL
     // ------------------------------------------------------------
-    const model = genAI.getGenerativeModel({
+    const prompt = `Return ONLY a 13x13 JSON array containing 0s and 1s.
+    
+    Draw a new pixel-art flower: "${selectedShape}"
+
+    Rules:
+    - Center the flower.
+    - Use 1 for filled pixels, 0 for empty.
+    - After drawing, flip 6–12 random pixels using seed ${noiseSeed}.
+    - Do NOT explain anything.
+    - Output ONLY the JSON array.
+    `;
+
+    const result = await genAI.models.generateContent({
       model: "gemini-pro",
-      generationConfig: { temperature: 1.0 }
+      contents: prompt,
     });
 
-    // ------------------------------------------------------------
-    // PROMPT
-    // ------------------------------------------------------------
-    const prompt = `
-Return ONLY a 13x13 JSON array containing 0s and 1s.
+    if (!result) throw new Error("Empty AI response");
 
-Draw a new pixel-art flower:
-"${selectedShape}"
-
-Rules:
-- Center the flower.
-- Use 1 for filled pixels, 0 for empty.
-- After drawing, flip 6–12 random pixels using seed ${noiseSeed}.
-- Do NOT explain anything.
-- Output ONLY the JSON array.
-`;
-
-    const result = await model.generateContent(prompt);
-
-    if (!result?.response) throw new Error("Empty AI response");
-
-    const raw = result.response.text().trim();
-    console.log("🧪 RAW AI OUTPUT:", raw);
+    const raw = result.text || result.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const trimmed = String(raw).trim();
+    console.log("🧪 RAW AI OUTPUT:", trimmed);
 
     let flowerData;
     try {
-      flowerData = JSON.parse(raw);
-    } catch (err) {
-      console.error("❌ JSON PARSE FAILED:", raw);
+      flowerData = JSON.parse(trimmed);
+    } catch {
+      console.error("❌ JSON PARSE FAILED:", trimmed);
       throw new Error("AI output was not valid JSON");
     }
 
