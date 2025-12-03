@@ -5,12 +5,19 @@ export const BOARD_H = 28;
 export const USER_POSITIONS = [11, 32, 53, 74];
 
 export interface UserFlower {
-    user_id: string;
-    first_name: string;
-    goal_completions: number;
-    daily_calories: number;
-    daily_calories_goal: number;
-    flower: Flower;
+    user_id?: string;
+    first_name?: string;
+    name?: string;
+    goal_completions?: number;
+    daily_calories?: number;
+    daily_calories_goal?: number;
+    flower?: Flower;
+    // For leaderboard data
+    id?: number;
+    level?: number;
+    kcal_current?: number;
+    kcal_goal?: number;
+    flower_data?: number[][];
 }
 
 export interface UserData {
@@ -26,6 +33,10 @@ export interface UserData {
 }
 
 export function getFlowerShape(user: UserData | UserFlower): number[][] | null {
+    if ('flower_data' in user && user.flower_data && Array.isArray(user.flower_data)) {
+        return user.flower_data;
+    }
+
     if ('flower' in user && user.flower) {
         if (Array.isArray(user.flower) && user.flower.length > 0) {
             const lastFrame = user.flower[user.flower.length - 1];
@@ -35,17 +46,15 @@ export function getFlowerShape(user: UserData | UserFlower): number[][] | null {
         }
     }
 
-    const lvl = 'goal_completions' in user ? user.goal_completions : (user.level || 1);
-    if (lvl <= 6) {
+    const lvl = 'goal_completions' in user ? (user.goal_completions ?? user.level ?? 1) : (user.level ?? 1);
+    if (lvl && lvl <= 6) {
         const levelKey = `level_${lvl}` as keyof typeof flowers;
         const staticFrames = flowers[levelKey];
         if (staticFrames && staticFrames.length > 0) {
             return staticFrames[staticFrames.length - 1];
         }
     }
-    if (lvl > 6 && 'flower_data' in user && user.flower_data) {
-        return user.flower_data;
-    }
+
     return null;
 }
 
@@ -69,12 +78,12 @@ export function calculateStemHeight(user: UserData | UserFlower): number {
     let current = 0;
     let goal = 0;
 
-    if ('daily_calories' in user) {
-        current = user.daily_calories || 0;
-        goal = user.daily_calories_goal || 0;
-    } else {
+    if ('kcal_current' in user || 'kcal_goal' in user) {
         current = user.kcal_current || 0;
         goal = user.kcal_goal || 0;
+    } else if ('daily_calories' in user) {
+        current = user.daily_calories || 0;
+        goal = user.daily_calories_goal || 0;
     }
 
     if (goal > 0) {
@@ -142,10 +151,16 @@ export function buildGrid(users: (UserData | UserFlower)[]): number[][] {
 }
 
 export function extractFirstName(user: UserData | UserFlower): string | null {
-    if ('first_name' in user) {
-        return user.first_name || null;
+    if ('first_name' in user && user.first_name) {
+        return user.first_name;
     }
-    return user.data?.first_name || null;
+    if ('name' in user && user.name) {
+        return user.name;
+    }
+    if ('data' in user && user.data?.first_name) {
+        return user.data.first_name;
+    }
+    return null;
 }
 
 export function generateFlowerFromLevel(level: number): Flower {

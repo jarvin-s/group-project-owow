@@ -9,7 +9,6 @@ import {
   buildGrid,
   extractFirstName,
   UserFlower,
-  generateFlowerFromLevel,
 } from "@/lib/flipboardUtils";
 
 const pixelify = Pixelify_Sans({
@@ -25,48 +24,22 @@ export default function FlipBoard() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: progressData } = await supabase
-        .from("user_progress")
-        .select(
-          `
-          user_id,
-          goal_completions,
-          daily_calories,
-          daily_calories_goal,
-          users!inner(first_name)
-        `
-        )
-        .order("goal_completions", { ascending: false })
+      const { data: leaderboardData } = await supabase
+        .from("leaderboard")
+        .select("id, name, level, kcal_current, kcal_goal, flower_data")
+        .order("id", { ascending: true })
         .limit(4);
 
-      if (!progressData) return;
+      if (!leaderboardData) return;
 
-      interface ProgressRow {
-        user_id: string;
-        goal_completions: number;
-        daily_calories: number;
-        daily_calories_goal: number;
-        users:
-          | {
-              first_name: string;
-            }
-          | null
-          | {
-              first_name: string;
-            }[];
-      }
-
-      const users: UserFlower[] = progressData.map((item: ProgressRow) => {
-        const usersData = Array.isArray(item.users)
-          ? item.users[0]
-          : item.users;
+      const users: UserFlower[] = leaderboardData.map((item) => {
         return {
-          user_id: item.user_id,
-          first_name: usersData?.first_name || "",
-          goal_completions: item.goal_completions || 0,
-          daily_calories: item.daily_calories || 0,
-          daily_calories_goal: item.daily_calories_goal || 0,
-          flower: generateFlowerFromLevel(item.goal_completions || 1),
+          id: item.id,
+          name: item.name || "",
+          level: item.level || 1,
+          kcal_current: item.kcal_current || 0,
+          kcal_goal: item.kcal_goal || 0,
+          flower_data: item.flower_data || null,
         };
       });
 
@@ -121,7 +94,7 @@ export default function FlipBoard() {
 
           return (
             <div
-              key={`name-${user.user_id}`}
+              key={`name-${user.id || user.user_id || index}`}
               className="absolute text-white text-xl font-bold whitespace-nowrap"
               style={{
                 left: `${leftOffset}px`,
@@ -146,24 +119,24 @@ export default function FlipBoard() {
           ) : (
             usersData.map((user, index) => (
               <div
-                key={user.user_id}
+                key={user.id || user.user_id || index}
                 className="flex items-center justify-between group"
               >
                 <div className="flex items-center gap-4">
                   <span className="text-3xl text-gray-400">#{index + 1}</span>
                   <div>
                     <h2 className="text-2xl font-bold uppercase">
-                      {user.first_name}
+                      {user.name || user.first_name || "Unknown"}
                     </h2>
                     <p className="text-sm text-gray-400">
-                      Level {user.goal_completions || 1}
+                      Level {user.level || user.goal_completions || 1}
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right">
                   <span className="text-xl block">
-                    {user.daily_calories}
+                    {user.kcal_current || user.daily_calories || 0}
                     <span className="text-xs text-gray-500 ml-1">kcal</span>
                   </span>
                   <div className="w-20 h-2 bg-gray-800 rounded-full mt-1 overflow-hidden">
@@ -171,8 +144,8 @@ export default function FlipBoard() {
                       className="h-full bg-white transition-all duration-500"
                       style={{
                         width: `${Math.min(
-                          ((user.daily_calories || 0) /
-                            (user.daily_calories_goal || 1)) *
+                          ((user.kcal_current || user.daily_calories || 0) /
+                            (user.kcal_goal || user.daily_calories_goal || 1)) *
                             100,
                           100
                         )}%`,
