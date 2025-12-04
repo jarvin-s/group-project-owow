@@ -1,14 +1,7 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabaseClient";
 
-// Connect to Supabase
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-// Connect to Gemini
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 
 export async function POST(req: Request) {
@@ -17,7 +10,6 @@ export async function POST(req: Request) {
 
     console.log(`Generating flower for ID: ${employeeId}, Level: ${level}`);
 
-    // 1. ASK GEMINI FOR THE FLOWER SHAPE
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
@@ -37,8 +29,6 @@ export async function POST(req: Request) {
     const text = result.response.text().replace(/```json|```/g, "").trim();
     const flowerData = JSON.parse(text);
 
-    // 2. CREATE THE "REVEAL ORDER" (SHUFFLE)
-    // This makes the pixels appear randomly instead of in boring rows
     const revealOrder = [];
     for (let r = 0; r < 13; r++) {
       for (let c = 0; c < 13; c++) {
@@ -48,14 +38,11 @@ export async function POST(req: Request) {
       }
     }
 
-    // Shuffle the array (Fisher-Yates shuffle)
     for (let i = revealOrder.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [revealOrder[i], revealOrder[j]] = [revealOrder[j], revealOrder[i]];
     }
 
-    // 3. SAVE TO SUPABASE
-    // We update the specific user in the 'leaderboard' table
     const { error } = await supabase
       .from('leaderboard')
       .update({
