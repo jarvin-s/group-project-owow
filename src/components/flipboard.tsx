@@ -10,6 +10,7 @@ import {
   extractFirstName,
   UserFlower,
 } from "@/lib/flipboardUtils";
+import { useRouter } from "next/navigation";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -17,6 +18,7 @@ const pixelify = Pixelify_Sans({
 });
 
 export default function FlipBoard() {
+  const router = useRouter();
   const [grid, setGrid] = useState<number[][]>(
     Array.from({ length: BOARD_H }, () => Array(BOARD_W).fill(0))
   );
@@ -57,55 +59,61 @@ export default function FlipBoard() {
     <div
       className={`min-h-screen bg-black flex items-center justify-center p-8 gap-12 ${pixelify.className}`}
     >
-      <div className="relative border-4 border-white p-4 rounded-xl bg-black shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${BOARD_W}, 10px)`,
-            gap: "2px",
-          }}
+      <div className="flex flex-col gap-2 items-start">
+        <button
+          onClick={() => router.push("/")}
+          className="text-white text-xl font-bold cursor-pointer"
         >
-          {grid.map((row, y) =>
-            row.map((cell, x) => (
-              <div
-                key={`${y}-${x}`}
-                className="w-[10px] h-[10px] flip-dot-wrapper"
-              >
-                <div className={`flip-dot ${cell ? "is-flipped" : ""}`}>
-                  <div className="flip-dot-face flip-dot-front" />
-                  <div className="flip-dot-face flip-dot-back" />
+          ← Back to home
+        </button>
+        <div className="relative border-4 border-white p-4 rounded-xl bg-black shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: `repeat(${BOARD_W}, 10px)`,
+              gap: "2px",
+            }}
+          >
+            {grid.map((row, y) =>
+              row.map((cell, x) => (
+                <div
+                  key={`${y}-${x}`}
+                  className="w-[10px] h-[10px] flip-dot-wrapper"
+                >
+                  <div className={`flip-dot ${cell ? "is-flipped" : ""}`}>
+                    <div className="flip-dot-face flip-dot-front" />
+                    <div className="flip-dot-face flip-dot-back" />
+                  </div>
                 </div>
+              ))
+            )}
+          </div>
+          {usersData.map((user, index) => {
+            const firstName = extractFirstName(user);
+            const cx = USER_POSITIONS[index];
+            if (!cx || !firstName) return null;
+            const cellSize = 10;
+            const gap = 2;
+            const gridLeft = 16;
+            const textWidth =
+              (String(index + 1).length + 2 + firstName.length) * 6; // account for "n. "
+            const leftOffset = gridLeft + cx * (cellSize + gap) - textWidth / 2;
+            const topOffset = BOARD_H * (cellSize + gap) + 6;
+            return (
+              <div
+                key={`name-${user.id || user.user_id || index}`}
+                className="absolute text-white text-xl font-bold whitespace-nowrap"
+                style={{
+                  left: `${leftOffset}px`,
+                  top: `${topOffset}px`,
+                  transform: "translateX(0)",
+                }}
+              >
+                {index + 1}. {firstName}
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
-        {usersData.map((user, index) => {
-          const firstName = extractFirstName(user);
-          const cx = USER_POSITIONS[index];
-          if (!cx || !firstName) return null;
-
-          const cellSize = 10;
-          const gap = 2;
-          const gridLeft = 16;
-          const textWidth =
-            (String(index + 1).length + 2 + firstName.length) * 6; // account for "n. "
-          const leftOffset = gridLeft + cx * (cellSize + gap) - textWidth / 2;
-          const topOffset = BOARD_H * (cellSize + gap) + 6;
-
-          return (
-            <div
-              key={`name-${user.id || user.user_id || index}`}
-              className="absolute text-white text-xl font-bold whitespace-nowrap"
-              style={{
-                left: `${leftOffset}px`,
-                top: `${topOffset}px`,
-                transform: "translateX(0)",
-              }}
-            >
-              {index + 1}. {firstName}
-            </div>
-          );
-        })}
       </div>
 
       <div className="text-white w-80">
