@@ -90,15 +90,38 @@ export async function incrementGoalCompletions(): Promise<boolean> {
   const { error } = await supabase
     .from("user_progress")
     .update({
-      goal_completions: progress.goal_completions + 1,
       daily_calories: 0,
       updated_at: new Date().toISOString(),
     })
     .eq("user_id", session.user.id);
 
   if (error) {
-    console.error("Error incrementing goal completions:", error);
+    console.error("Error updating user progress:", error);
     return false;
+  }
+
+  const { error: leaderboardError } = await supabase.rpc("increment_leaderboard_level", {
+    p_user_id: session.user.id,
+  });
+
+  if (leaderboardError) {
+    const { data: currentLeaderboard } = await supabase
+      .from("leaderboard")
+      .select("level")
+      .eq("user_id", session.user.id)
+      .single();
+
+    const currentLevel = currentLeaderboard?.level || 1;
+
+    const { error: updateError } = await supabase
+      .from("leaderboard")
+      .update({ level: currentLevel + 1 })
+      .eq("user_id", session.user.id);
+
+    if (updateError) {
+      console.error("Error incrementing leaderboard level:", updateError);
+      return false;
+    }
   }
 
   return true;

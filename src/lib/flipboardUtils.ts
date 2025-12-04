@@ -12,7 +12,6 @@ export interface UserFlower {
     daily_calories?: number;
     daily_calories_goal?: number;
     flower?: Flower;
-    // For leaderboard data
     id?: number;
     level?: number;
     kcal_current?: number;
