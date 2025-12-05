@@ -1,8 +1,9 @@
 import { flowers, Flower } from "@/components/flowers";
 
-export const BOARD_W = 84;
-export const BOARD_H = 28;
-export const USER_POSITIONS = [11, 32, 53, 74];
+export const BOARD_W = 140;
+export const BOARD_H = 32;
+export const FLOWER_POSITIONS = [12, 28, 44, 60];
+export const LEADERBOARD_START_X = 76;
 
 export interface UserFlower {
     user_id?: string;
@@ -129,10 +130,10 @@ export function drawFlower(
 
 export function buildGrid(users: (UserData | UserFlower)[]): number[][] {
     const grid = Array.from({ length: BOARD_H }, () => Array(BOARD_W).fill(0));
-    const groundY = BOARD_H - 4;
+    const groundY = BOARD_H - 12;
 
-    users.forEach((user, index) => {
-        const cx = USER_POSITIONS[index];
+    users.slice(0, 4).forEach((user, index) => {
+        const cx = FLOWER_POSITIONS[index];
         if (!cx) return;
 
         drawPot(grid, cx, groundY);
