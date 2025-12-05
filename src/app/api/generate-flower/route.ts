@@ -13,16 +13,15 @@ export async function POST(req: Request) {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
-    You are a pixel artist creating a 13x13 icon.
-    Generate a binary JSON 2D array (13 rows, 13 columns) for a Level ${level} flower bloom.
-    
-    STRICT RULES:
-    1. Output MUST be a single connected shape.
-    2. It must be SYMMETRICAL and CENTERED.
-    3. It must look like a solid pixel-art flower head.
-    4. Do NOT include a stem. Just the bloom.
-    5. Use 1 for ON, 0 for OFF.
-    6. Return ONLY the raw JSON array.
+    Return ONLY a 13x13 JSON array containing 0s and 1s.
+    Draw a new pixel-art flower that includes a stem and resembles flowers like a tulip, rose, sunflower, etc.
+
+    RULES:
+    - Center the flower.
+    - Use 1 for filled pixels, 0 for empty.
+    - After drawing, flip 6–12 random pixels using seed with thick petals.
+    - Do NOT explain anything.
+    - Output ONLY the JSON array.
   `;
 
     const result = await model.generateContent(prompt);
