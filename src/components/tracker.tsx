@@ -89,6 +89,7 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
     leaderboardId: number | null;
   }>({ level: 0, leaderboardId: null });
   const [generatingFlower, setGeneratingFlower] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
 
   const addCalories = async () => {
     setShowPopup(true);
@@ -126,9 +127,18 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
   };
 
   const generateFlower = async () => {
-    if (!levelUpData.leaderboardId) return;
+    if (!levelUpData.leaderboardId || generatingFlower) return;
 
     setGeneratingFlower(true);
+    setGenerationProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setGenerationProgress((prev) => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 200);
+
     try {
       const res = await fetch("/api/generate-flower", {
         method: "POST",
@@ -140,12 +150,17 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
       });
       const data = await res.json();
       if (data.success) {
-        setShowLevelUpPopup(false);
+        setGenerationProgress(100);
+        setTimeout(() => {
+          setShowLevelUpPopup(false);
+        }, 500);
       }
     } catch (err) {
       console.error("Error generating flower:", err);
     } finally {
+      clearInterval(progressInterval);
       setGeneratingFlower(false);
+      setGenerationProgress(0);
     }
   };
 
@@ -344,10 +359,25 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
                 <p className="text-lg text-white text-center">
                   You unlocked a unique AI flower!
                 </p>
+                {generatingFlower && (
+                  <div className="w-full max-w-xs">
+                    <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                      <div
+                        className="bg-purple-600 h-full transition-all duration-300 ease-out rounded-full"
+                        style={{
+                          width: `${Math.min(generationProgress, 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="text-sm text-gray-400 text-center mt-2">
+                      {Math.round(Math.min(generationProgress, 100))}%
+                    </p>
+                  </div>
+                )}
                 <button
                   onClick={generateFlower}
                   disabled={generatingFlower}
-                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-bold py-3 px-6 rounded-xl cursor-pointer"
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl cursor-pointer transition-colors"
                 >
                   {generatingFlower ? "Generating..." : "Generate Flower"}
                 </button>
