@@ -17,7 +17,6 @@ const pixelify = Pixelify_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-
 interface Food {
   id: string;
   name: string;
@@ -84,6 +83,13 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<Food[]>([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [showLevelUpPopup, setShowLevelUpPopup] = useState(false);
+  const [levelUpData, setLevelUpData] = useState<{
+    level: number;
+    leaderboardId: number | null;
+  }>({ level: 0, leaderboardId: null });
+  const [generatingFlower, setGeneratingFlower] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
 
   const addCalories = async () => {
     setShowPopup(true);
@@ -104,11 +110,57 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
       window.dispatchEvent(new Event("caloriesUpdated"));
 
       if (newCalories >= goal) {
-        await incrementGoalCompletions();
+        const result = await incrementGoalCompletions();
         window.dispatchEvent(new Event("caloriesUpdated"));
+
+        if (result.success && result.newLevel > 6) {
+          setLevelUpData({
+            level: result.newLevel,
+            leaderboardId: result.leaderboardId,
+          });
+          setShowLevelUpPopup(true);
+        }
       }
     } catch (err) {
       console.error("Failed to add calories:", err);
+    }
+  };
+
+  const generateFlower = async () => {
+    if (!levelUpData.leaderboardId || generatingFlower) return;
+
+    setGeneratingFlower(true);
+    setGenerationProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setGenerationProgress((prev) => {
+        if (prev >= 90) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 200);
+
+    try {
+      const res = await fetch("/api/generate-flower", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          employeeId: levelUpData.leaderboardId,
+          level: levelUpData.level,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGenerationProgress(100);
+        setTimeout(() => {
+          setShowLevelUpPopup(false);
+        }, 500);
+      }
+    } catch (err) {
+      console.error("Error generating flower:", err);
+    } finally {
+      clearInterval(progressInterval);
+      setGeneratingFlower(false);
+      setGenerationProgress(0);
     }
   };
 
@@ -278,7 +330,6 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
           </div>
         )}
 
-        {/* Popup */}
         {showPopup && (
           <div className="fixed inset-0 flex items-center justify-center z-50 pointer-events-none">
             <div className="bg-black border-4 border-white rounded-2xl px-8 py-6 shadow-2xl animate-fade-in">
@@ -290,6 +341,54 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
                   </p>
                   <p className="text-sm text-white">added!</p>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showLevelUpPopup && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+            <div className="bg-black border-4 border-white rounded-2xl px-8 py-6 shadow-2xl">
+              <div className="flex flex-col items-center gap-4">
+                <span className="text-4xl text-white font-bold">
+                  Congratulations!
+                </span>
+                <p className="text-xl text-white font-bold text-center">
+                  Level {levelUpData.level}!
+                </p>
+                <p className="text-lg text-white text-center">
+                  You unlocked a unique AI flower!
+                </p>
+                {generatingFlower && (
+                  <div className="w-full max-w-xs">
+                    <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                      <div
+                        className="bg-purple-600 h-full transition-all duration-300 ease-out rounded-full"
+                        style={{
+                          width: `${Math.min(generationProgress, 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="text-sm text-gray-400 text-center mt-2">
+                      {Math.round(Math.min(generationProgress, 100))}%
+                    </p>
+                  </div>
+                )}
+                <button
+                  onClick={generateFlower}
+                  disabled={generatingFlower}
+                  className="bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-xl cursor-pointer transition-colors"
+                >
+                  {generatingFlower ? "Generating..." : "Generate Flower"}
+                </button>
+                <button
+                  onClick={() => setShowLevelUpPopup(false)}
+                  className={`text-gray-400 text-lg cursor-pointer hover:text-white ${
+                    generatingFlower ? "hidden" : "block"
+                  }`}
+                >
+                  Maybe later
+                </button>
               </div>
             </div>
           </div>

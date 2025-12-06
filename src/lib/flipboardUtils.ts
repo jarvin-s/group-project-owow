@@ -1,16 +1,23 @@
 import { flowers, Flower } from "@/components/flowers";
 
-export const BOARD_W = 84;
-export const BOARD_H = 28;
-export const USER_POSITIONS = [11, 32, 53, 74];
+export const BOARD_W = 140;
+export const BOARD_H = 32;
+export const FLOWER_POSITIONS = [12, 28, 44, 60];
+export const LEADERBOARD_START_X = 76;
 
 export interface UserFlower {
-    user_id: string;
-    first_name: string;
-    goal_completions: number;
-    daily_calories: number;
-    daily_calories_goal: number;
-    flower: Flower;
+    user_id?: string;
+    first_name?: string;
+    name?: string;
+    goal_completions?: number;
+    daily_calories?: number;
+    daily_calories_goal?: number;
+    flower?: Flower;
+    id?: number;
+    level?: number;
+    kcal_current?: number;
+    kcal_goal?: number;
+    flower_data?: number[][];
 }
 
 export interface UserData {
@@ -26,6 +33,10 @@ export interface UserData {
 }
 
 export function getFlowerShape(user: UserData | UserFlower): number[][] | null {
+    if ('flower_data' in user && user.flower_data && Array.isArray(user.flower_data)) {
+        return user.flower_data;
+    }
+
     if ('flower' in user && user.flower) {
         if (Array.isArray(user.flower) && user.flower.length > 0) {
             const lastFrame = user.flower[user.flower.length - 1];
@@ -35,17 +46,15 @@ export function getFlowerShape(user: UserData | UserFlower): number[][] | null {
         }
     }
 
-    const lvl = 'goal_completions' in user ? user.goal_completions : (user.level || 1);
-    if (lvl <= 6) {
+    const lvl = 'goal_completions' in user ? (user.goal_completions ?? user.level ?? 1) : (user.level ?? 1);
+    if (lvl && lvl <= 6) {
         const levelKey = `level_${lvl}` as keyof typeof flowers;
         const staticFrames = flowers[levelKey];
         if (staticFrames && staticFrames.length > 0) {
             return staticFrames[staticFrames.length - 1];
         }
     }
-    if (lvl > 6 && 'flower_data' in user && user.flower_data) {
-        return user.flower_data;
-    }
+
     return null;
 }
 
@@ -69,12 +78,12 @@ export function calculateStemHeight(user: UserData | UserFlower): number {
     let current = 0;
     let goal = 0;
 
-    if ('daily_calories' in user) {
-        current = user.daily_calories || 0;
-        goal = user.daily_calories_goal || 0;
-    } else {
+    if ('kcal_current' in user || 'kcal_goal' in user) {
         current = user.kcal_current || 0;
         goal = user.kcal_goal || 0;
+    } else if ('daily_calories' in user) {
+        current = user.daily_calories || 0;
+        goal = user.daily_calories_goal || 0;
     }
 
     if (goal > 0) {
@@ -121,10 +130,10 @@ export function drawFlower(
 
 export function buildGrid(users: (UserData | UserFlower)[]): number[][] {
     const grid = Array.from({ length: BOARD_H }, () => Array(BOARD_W).fill(0));
-    const groundY = BOARD_H - 4;
+    const groundY = BOARD_H - 12;
 
-    users.forEach((user, index) => {
-        const cx = USER_POSITIONS[index];
+    users.slice(0, 4).forEach((user, index) => {
+        const cx = FLOWER_POSITIONS[index];
         if (!cx) return;
 
         drawPot(grid, cx, groundY);
@@ -142,10 +151,16 @@ export function buildGrid(users: (UserData | UserFlower)[]): number[][] {
 }
 
 export function extractFirstName(user: UserData | UserFlower): string | null {
-    if ('first_name' in user) {
-        return user.first_name || null;
+    if ('first_name' in user && user.first_name) {
+        return user.first_name;
     }
-    return user.data?.first_name || null;
+    if ('name' in user && user.name) {
+        return user.name;
+    }
+    if ('data' in user && user.data?.first_name) {
+        return user.data.first_name;
+    }
+    return null;
 }
 
 export function generateFlowerFromLevel(level: number): Flower {
@@ -157,5 +172,40 @@ export function generateFlowerFromLevel(level: number): Flower {
         }
     }
     return [];
+}
+
+export const CELL_SIZE = 10;
+export const GAP = 2;
+
+export function renderGridToCanvas(
+    ctx: CanvasRenderingContext2D,
+    grid: number[][],
+    cellSize: number = CELL_SIZE,
+    gap: number = GAP
+): void {
+    const offColor = "#1a1a1a";
+    const onColor = "#f3f3f3";
+
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[y].length; x++) {
+            const px = x * (cellSize + gap);
+            const py = y * (cellSize + gap);
+            
+            ctx.fillStyle = grid[y][x] === 1 ? onColor : offColor;
+            ctx.beginPath();
+            ctx.arc(px + cellSize / 2, py + cellSize / 2, cellSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+export function getCanvasDimensions(): { width: number; height: number } {
+    return {
+        width: BOARD_W * (CELL_SIZE + GAP) - GAP,
+        height: BOARD_H * (CELL_SIZE + GAP) - GAP,
+    };
 }
 

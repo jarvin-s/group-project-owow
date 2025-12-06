@@ -1,16 +1,20 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { Pixelify_Sans } from "next/font/google";
 import {
-  BOARD_W,
   BOARD_H,
-  USER_POSITIONS,
+  FLOWER_POSITIONS,
+  LEADERBOARD_START_X,
+  CELL_SIZE,
+  GAP,
   buildGrid,
   extractFirstName,
+  renderGridToCanvas,
+  getCanvasDimensions,
   UserFlower,
-  generateFlowerFromLevel,
 } from "@/lib/flipboardUtils";
+import { useRouter } from "next/navigation";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -18,171 +22,117 @@ const pixelify = Pixelify_Sans({
 });
 
 export default function FlipBoard() {
-  const [grid, setGrid] = useState<number[][]>(
-    Array.from({ length: BOARD_H }, () => Array(BOARD_W).fill(0))
-  );
+  const router = useRouter();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [usersData, setUsersData] = useState<UserFlower[]>([]);
+  const { width: canvasWidth, height: canvasHeight } = getCanvasDimensions();
+
+  const renderCanvas = useCallback((grid: number[][]) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    renderGridToCanvas(ctx, grid);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: progressData } = await supabase
-        .from("user_progress")
-        .select(
-          `
-          user_id,
-          goal_completions,
-          daily_calories,
-          daily_calories_goal,
-          users!inner(first_name)
-        `
-        )
-        .order("goal_completions", { ascending: false })
-        .limit(4);
+      const { data: leaderboardData } = await supabase
+        .from("leaderboard")
+        .select("id, name, level, kcal_current, kcal_goal, flower_data")
+        .order("level", { ascending: false })
+        .limit(5);
 
-      if (!progressData) return;
+      if (!leaderboardData) return;
 
-      interface ProgressRow {
-        user_id: string;
-        goal_completions: number;
-        daily_calories: number;
-        daily_calories_goal: number;
-        users:
-          | {
-              first_name: string;
-            }
-          | null
-          | {
-              first_name: string;
-            }[];
-      }
-
-      const users: UserFlower[] = progressData.map((item: ProgressRow) => {
-        const usersData = Array.isArray(item.users)
-          ? item.users[0]
-          : item.users;
+      const users: UserFlower[] = leaderboardData.map((item) => {
         return {
-          user_id: item.user_id,
-          first_name: usersData?.first_name || "",
-          goal_completions: item.goal_completions || 0,
-          daily_calories: item.daily_calories || 0,
-          daily_calories_goal: item.daily_calories_goal || 0,
-          flower: generateFlowerFromLevel(item.goal_completions || 1),
+          id: item.id,
+          name: item.name || "",
+          level: item.level || 1,
+          kcal_current: item.kcal_current || 0,
+          kcal_goal: item.kcal_goal || 0,
+          flower_data: item.flower_data || null,
         };
       });
 
       setUsersData(users);
       const newGrid = buildGrid(users);
-      setGrid(newGrid);
+      renderCanvas(newGrid);
     };
 
     fetchData();
     const interval = setInterval(fetchData, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [renderCanvas]);
 
   return (
     <div
       className={`min-h-screen bg-black flex items-center justify-center p-8 gap-12 ${pixelify.className}`}
     >
-      <div className="relative border-4 border-white p-4 rounded-xl bg-black shadow-[0_0_30px_rgba(255,255,255,0.1)]">
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${BOARD_W}, 10px)`,
-            gap: "2px",
-          }}
+      <div className="flex flex-col gap-2 items-start">
+        <button
+          onClick={() => router.push("/")}
+          className="text-white text-xl font-bold cursor-pointer"
         >
-          {grid.map((row, y) =>
-            row.map((cell, x) => (
+          ← Back to home
+        </button>
+        <div className="relative border-4 border-white p-4 rounded-xl bg-black shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+          <canvas
+            ref={canvasRef}
+            width={canvasWidth}
+            height={canvasHeight}
+            className="block"
+          />
+          {usersData.slice(0, 4).map((user, index) => {
+            const firstName = extractFirstName(user);
+            const cx = FLOWER_POSITIONS[index];
+            if (!cx || !firstName) return null;
+            const gridLeft = 16;
+            const textWidth =
+              (String(index + 1).length + 2 + firstName.length) * 6;
+            const leftOffset = gridLeft + cx * (CELL_SIZE + GAP) - textWidth / 2;
+            const topOffset = BOARD_H * (CELL_SIZE + GAP) - 96;
+            return (
               <div
-                key={`${y}-${x}`}
-                className="w-[10px] h-[10px] flip-dot-wrapper"
+                key={`name-${user.id || user.user_id || index}`}
+                className="absolute text-white text-xl font-bold whitespace-nowrap"
+                style={{
+                  left: `${leftOffset}px`,
+                  top: `${topOffset}px`,
+                  transform: "translateX(0)",
+                }}
               >
-                <div className={`flip-dot ${cell ? "is-flipped" : ""}`}>
-                  <div className="flip-dot-face flip-dot-front" />
-                  <div className="flip-dot-face flip-dot-back" />
-                </div>
+                {index + 1}. {firstName}
               </div>
-            ))
-          )}
-        </div>
-        {usersData.map((user, index) => {
-          const firstName = extractFirstName(user);
-          const cx = USER_POSITIONS[index];
-          if (!cx || !firstName) return null;
-
-          const cellSize = 10;
-          const gap = 2;
-          const gridLeft = 16;
-          const textWidth =
-            (String(index + 1).length + 2 + firstName.length) * 6; // account for "n. "
-          const leftOffset = gridLeft + cx * (cellSize + gap) - textWidth / 2;
-          const topOffset = BOARD_H * (cellSize + gap) + 6;
-
-          return (
-            <div
-              key={`name-${user.user_id}`}
-              className="absolute text-white text-xl font-bold whitespace-nowrap"
-              style={{
-                left: `${leftOffset}px`,
-                top: `${topOffset}px`,
-                transform: "translateX(0)",
-              }}
-            >
-              {index + 1}. {firstName}
+            );
+          })}
+          <div
+            className="absolute flex flex-col text-white"
+            style={{
+              left: `${16 + LEADERBOARD_START_X * 12}px`,
+              top: "60px",
+            }}
+          >
+            <h2 className="text-6xl font-bold mb-4">LEADERBOARD</h2>
+            <div className="flex flex-col gap-2">
+              {usersData.slice(0, 5).map((user, index) => {
+                const name = extractFirstName(user) || "???";
+                const level = user.level || user.goal_completions || 1;
+                return (
+                  <div
+                    key={`lb-${user.id || user.user_id || index}`}
+                    className="flex items-center justify-between gap-8 text-lg"
+                  >
+                    <span>
+                      {index + 1}. {name.substring(0, 10)}
+                    </span>
+                    <span className="text-gray-400">Lv {level}</span>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
-
-      <div className="text-white w-80">
-        <h1 className="text-5xl font-bold mb-8 tracking-widest border-b-4 border-white pb-4">
-          LEADERBOARD
-        </h1>
-
-        <div className="flex flex-col gap-6">
-          {usersData.length === 0 ? (
-            <p className="text-gray-500 animate-pulse">Scanning Garden...</p>
-          ) : (
-            usersData.map((user, index) => (
-              <div
-                key={user.user_id}
-                className="flex items-center justify-between group"
-              >
-                <div className="flex items-center gap-4">
-                  <span className="text-3xl text-gray-400">#{index + 1}</span>
-                  <div>
-                    <h2 className="text-2xl font-bold uppercase">
-                      {user.first_name}
-                    </h2>
-                    <p className="text-sm text-gray-400">
-                      Level {user.goal_completions || 1}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-xl block">
-                    {user.daily_calories}
-                    <span className="text-xs text-gray-500 ml-1">kcal</span>
-                  </span>
-                  <div className="w-20 h-2 bg-gray-800 rounded-full mt-1 overflow-hidden">
-                    <div
-                      className="h-full bg-white transition-all duration-500"
-                      style={{
-                        width: `${Math.min(
-                          ((user.daily_calories || 0) /
-                            (user.daily_calories_goal || 1)) *
-                            100,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+          </div>
         </div>
       </div>
     </div>

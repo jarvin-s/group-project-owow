@@ -27,7 +27,7 @@ const meals: Meal[] = [
 
 export default function TrackerOverview() {
   const router = useRouter();
-  const [dailyGoal, setDailyGoal] = useState(1800);
+  const [dailyGoal, setDailyGoal] = useState(0);
   const [totalCalories, setTotalCalories] = useState(0);
   const [mealFoods, setMealFoods] = useState<Record<string, string[]>>({});
 
@@ -118,9 +118,17 @@ export default function TrackerOverview() {
       className={`flex items-center justify-center min-h-screen bg-gray-200 p-4 ${pixelify.className}`}
     >
       <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto hide-scrollbar">
-        {/* Date */}
-        <div className="text-base text-black mb-2 text-right">
-          {currentDate}
+        <div className="flex items-center justify-between mb-2">
+          <button
+            onClick={() => router.push("/")}
+            className="text-black text-xl font-bold cursor-pointer"
+          >
+            ← Back
+          </button>
+          {/* Date */}
+          <div className="text-base text-black mb-2 text-right">
+            {currentDate}
+          </div>
         </div>
 
         {/* Daily calories summary */}
