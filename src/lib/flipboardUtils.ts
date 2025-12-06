@@ -174,3 +174,38 @@ export function generateFlowerFromLevel(level: number): Flower {
     return [];
 }
 
+export const CELL_SIZE = 10;
+export const GAP = 2;
+
+export function renderGridToCanvas(
+    ctx: CanvasRenderingContext2D,
+    grid: number[][],
+    cellSize: number = CELL_SIZE,
+    gap: number = GAP
+): void {
+    const offColor = "#1a1a1a";
+    const onColor = "#f3f3f3";
+
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[y].length; x++) {
+            const px = x * (cellSize + gap);
+            const py = y * (cellSize + gap);
+            
+            ctx.fillStyle = grid[y][x] === 1 ? onColor : offColor;
+            ctx.beginPath();
+            ctx.arc(px + cellSize / 2, py + cellSize / 2, cellSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+export function getCanvasDimensions(): { width: number; height: number } {
+    return {
+        width: BOARD_W * (CELL_SIZE + GAP) - GAP,
+        height: BOARD_H * (CELL_SIZE + GAP) - GAP,
+    };
+}
+
