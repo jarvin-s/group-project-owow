@@ -54,18 +54,18 @@ const FlipboardIcon = ({ active }: { active: boolean }) => (
 const ProgressIcon = ({ active }: { active: boolean }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
+    width="32"
+    height="32"
     viewBox="0 0 24 24"
     fill={active ? "currentColor" : "none"}
     stroke="currentColor"
-    strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <line x1="18" y1="20" x2="18" y2="10" />
-    <line x1="12" y1="20" x2="12" y2="4" />
-    <line x1="6" y1="20" x2="6" y2="14" />
+    <path
+      fill="currentColor"
+      d="M13 5h2v14h-2zm-2 4H9v10h2zm-4 4H5v6h2zm12 0h-2v6h2z"
+    />
   </svg>
 );
 

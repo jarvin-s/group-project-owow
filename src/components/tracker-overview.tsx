@@ -190,7 +190,6 @@ export default function TrackerOverview() {
 
                     if (items.length === 0) return "No items logged yet";
 
-                    // Clean names (remove servings)
                     const clean = items.map((f) => {
                       let n = f.split("•")[0];
                       n = n.replace(/\d.*$/, "");
