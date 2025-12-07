@@ -6,7 +6,6 @@ import { Pixelify_Sans } from "next/font/google";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  getDailyCalories,
   updateDailyCalories,
   incrementGoalCompletions,
   getUserProgress,
