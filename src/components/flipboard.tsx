@@ -15,6 +15,7 @@ import {
   UserFlower,
 } from "@/lib/flipboardUtils";
 import { useRouter } from "next/navigation";
+import BottomNavbar from "./bottom-navbar";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -91,7 +92,8 @@ export default function FlipBoard() {
             const gridLeft = 16;
             const textWidth =
               (String(index + 1).length + 2 + firstName.length) * 6;
-            const leftOffset = gridLeft + cx * (CELL_SIZE + GAP) - textWidth / 2;
+            const leftOffset =
+              gridLeft + cx * (CELL_SIZE + GAP) - textWidth / 2;
             const topOffset = BOARD_H * (CELL_SIZE + GAP) - 96;
             return (
               <div
@@ -135,6 +137,7 @@ export default function FlipBoard() {
           </div>
         </div>
       </div>
+      <BottomNavbar />
     </div>
   );
 }

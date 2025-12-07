@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 
 import { Pixelify_Sans } from "next/font/google";
 import Image from "next/image";
+import BottomNavbar from "@/components/bottom-navbar";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -19,9 +22,9 @@ export default function FlowerGarden() {
   return (
     <>
       <div
-        className={`flex flex-col items-center justify-center h-screen ${pixelify.className}`}
+        className={`flex flex-col items-center justify-center min-h-screen ${pixelify.className}`}
       >
-        <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto justify-center items-center">
+        <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 pb-20 overflow-y-auto justify-center items-center">
           <div className="flex items-center justify-center flex-row gap-4 mb-10">
             <Link href="/">
               <ArrowLeft />
@@ -62,6 +65,7 @@ export default function FlowerGarden() {
             </div>
           </div>
         </div>
+        <BottomNavbar />
       </div>
     </>
   );

@@ -3,6 +3,7 @@
 import { useAuth } from "@/lib/auth";
 import { Pixelify_Sans } from "next/font/google";
 import Link from "next/link";
+import BottomNavbar from "@/components/bottom-navbar";
 
 const pixelifySans = Pixelify_Sans({
   variable: "--font-pixelify-sans",
@@ -15,9 +16,9 @@ export default function Home() {
   return (
     <>
       <div
-        className={`flex flex-col items-center justify-center h-screen ${pixelifySans.className}`}
+        className={`flex flex-col items-center justify-center min-h-screen ${pixelifySans.className}`}
       >
-        <div className="bg-[#0f0f0f] w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-white flex flex-col p-5">
+        <div className="bg-[#0f0f0f] w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-white flex flex-col p-5 pb-20">
           <h1 className="text-4xl font-bold text-center text-white mb-8">
             Welcome {user?.user_metadata?.first_name ?? ""}!
           </h1>
@@ -53,6 +54,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <BottomNavbar />
     </>
   );
 }

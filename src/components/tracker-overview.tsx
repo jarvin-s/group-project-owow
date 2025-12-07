@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getDailyCalories, getUserProgress } from "@/lib/userProgress";
 import { supabase } from "@/lib/supabaseClient";
+import BottomNavbar from "@/components/bottom-navbar";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -117,7 +118,7 @@ export default function TrackerOverview() {
     <div
       className={`flex items-center justify-center min-h-screen bg-gray-200 p-4 ${pixelify.className}`}
     >
-      <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto hide-scrollbar">
+        <div className="bg-white w-[375px] h-[700px] rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 pb-20 overflow-y-auto hide-scrollbar">
         <div className="flex items-center justify-between mb-2">
           <button
             onClick={() => router.push("/")}
@@ -220,6 +221,7 @@ export default function TrackerOverview() {
           ))}
         </div>
       </div>
+      <BottomNavbar />
     </div>
   );
 }

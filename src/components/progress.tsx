@@ -5,6 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
 import { Pixelify_Sans } from "next/font/google";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import BottomNavbar from "@/components/bottom-navbar";
 
 import flower from "@/components/images/flowerimage.png";
 
@@ -57,7 +58,7 @@ export default function ProgressPage() {
     <div
       className={`flex flex-col items-center justify-center h-screen bg-white ${pixelifySans.className}`}
     >
-      <div className="bg-white w-[375px] h-[700px] hide-scrollbar rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 overflow-y-auto">
+      <div className="bg-white w-[375px] h-[700px] hide-scrollbar rounded-[40px] shadow-2xl border-4 border-black flex flex-col p-5 pb-20 overflow-y-auto">
         <div className="flex items-center justify-evenly mb-4 mt-2">
           <button
             onClick={() => router.push("/")}
@@ -164,6 +165,7 @@ export default function ProgressPage() {
           </button>
         </div>
       </div>
+      <BottomNavbar />
     </div>
   );
 }
