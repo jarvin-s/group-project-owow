@@ -10,6 +10,7 @@ import {
   incrementGoalCompletions,
   getUserProgress,
 } from "@/lib/userProgress";
+import BottomNavbar from "./bottom-navbar";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -393,6 +394,7 @@ export default function Tracker({ mealType = "breakfast" }: TrackerProps) {
           </div>
         )}
       </div>
+      <BottomNavbar />
     </div>
   );
 }
