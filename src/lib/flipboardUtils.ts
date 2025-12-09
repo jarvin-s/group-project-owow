@@ -209,3 +209,59 @@ export function getCanvasDimensions(): { width: number; height: number } {
     };
 }
 
+// Mobile card constants
+export const MOBILE_CARD_SIZE = 32;
+export const MOBILE_CELL_SIZE = 6;
+export const MOBILE_GAP = 1;
+
+export function buildSingleFlowerGrid(user: UserData | UserFlower): number[][] {
+    const gridSize = MOBILE_CARD_SIZE;
+    const grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(0));
+    const groundY = gridSize - 6;
+    const cx = Math.floor(gridSize / 2);
+
+    drawPot(grid, cx, groundY);
+
+    const stemH = calculateStemHeight(user);
+    drawStem(grid, cx, groundY, stemH);
+
+    const flowerGrid = getFlowerShape(user);
+    if (flowerGrid) {
+        drawFlower(grid, flowerGrid, cx, groundY, stemH);
+    }
+
+    return grid;
+}
+
+export function renderSingleFlowerToCanvas(
+    ctx: CanvasRenderingContext2D,
+    grid: number[][],
+    cellSize: number = MOBILE_CELL_SIZE,
+    gap: number = MOBILE_GAP
+): void {
+    const offColor = "#1a1a1a";
+    const onColor = "#f3f3f3";
+
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[y].length; x++) {
+            const px = x * (cellSize + gap);
+            const py = y * (cellSize + gap);
+
+            ctx.fillStyle = grid[y][x] === 1 ? onColor : offColor;
+            ctx.beginPath();
+            ctx.arc(px + cellSize / 2, py + cellSize / 2, cellSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+}
+
+export function getMobileCanvasDimensions(): { width: number; height: number } {
+    return {
+        width: MOBILE_CARD_SIZE * (MOBILE_CELL_SIZE + MOBILE_GAP) - MOBILE_GAP,
+        height: MOBILE_CARD_SIZE * (MOBILE_CELL_SIZE + MOBILE_GAP) - MOBILE_GAP,
+    };
+}
+

@@ -12,6 +12,9 @@ import {
   extractFirstName,
   renderGridToCanvas,
   getCanvasDimensions,
+  buildSingleFlowerGrid,
+  renderSingleFlowerToCanvas,
+  getMobileCanvasDimensions,
   UserFlower,
 } from "@/lib/flipboardUtils";
 import { useRouter } from "next/navigation";
@@ -22,6 +25,42 @@ const pixelify = Pixelify_Sans({
   subsets: ["latin"],
   weight: ["400", "700"],
 });
+
+function FlowerCard({ user, rank }: { user: UserFlower; rank: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { width, height } = getMobileCanvasDimensions();
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const grid = buildSingleFlowerGrid(user);
+    renderSingleFlowerToCanvas(ctx, grid);
+  }, [user]);
+
+  const name = extractFirstName(user) || "???";
+  const level = user.level || user.goal_completions || 1;
+
+  return (
+    <div className="bg-[#111] border-2 border-white rounded-2xl p-4 flex flex-col items-center gap-3">
+      <div className="flex items-center justify-between w-full">
+        <span className="text-white text-lg font-bold">#{rank}</span>
+        <span className="text-gray-400 text-sm">Lv {level}</span>
+      </div>
+      <canvas
+        ref={canvasRef}
+        width={width}
+        height={height}
+        className="block rounded-lg"
+      />
+      <span className="text-white text-base font-medium truncate w-full text-center">
+        {name}
+      </span>
+    </div>
+  );
+}
 
 export default function FlipBoard() {
   const router = useRouter();
@@ -75,9 +114,44 @@ export default function FlipBoard() {
 
   return (
     <div
-      className={`min-h-screen bg-black flex items-center justify-center p-8 gap-12 ${pixelify.className}`}
+      className={`min-h-screen bg-black flex items-center justify-center p-4 lg:p-8 ${pixelify.className}`}
     >
-      <div className="flex flex-col gap-2 items-start">
+      {/* Mobile Layout (< lg) */}
+      <div className="lg:hidden flex flex-col gap-4 w-full max-w-[375px] pb-20">
+        {user && (
+          <button
+            onClick={() => router.push("/")}
+            className="text-white text-lg font-bold cursor-pointer self-start"
+          >
+            ← Back to home
+          </button>
+        )}
+        {!user && (
+          <button
+            onClick={() => router.push("/sign-in")}
+            className="text-white text-lg font-bold cursor-pointer self-start"
+          >
+            ← Back to Sign In
+          </button>
+        )}
+
+        <h1 className="text-3xl font-bold text-white text-center">
+          LEADERBOARD
+        </h1>
+
+        <div className="grid grid-cols-1 gap-3">
+          {usersData.slice(0, 4).map((userData, index) => (
+            <FlowerCard
+              key={`mobile-flower-${userData.id || index}`}
+              user={userData}
+              rank={index + 1}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Desktop Layout (>= lg) */}
+      <div className="hidden lg:flex flex-col gap-2 items-start">
         {user && (
           <button
             onClick={() => router.push("/")}
@@ -101,8 +175,8 @@ export default function FlipBoard() {
             height={canvasHeight}
             className="block"
           />
-          {usersData.slice(0, 4).map((user, index) => {
-            const firstName = extractFirstName(user);
+          {usersData.slice(0, 4).map((userData, index) => {
+            const firstName = extractFirstName(userData);
             const cx = FLOWER_POSITIONS[index];
             if (!cx || !firstName) return null;
             const gridLeft = 16;
@@ -113,7 +187,7 @@ export default function FlipBoard() {
             const topOffset = BOARD_H * (CELL_SIZE + GAP) - 96;
             return (
               <div
-                key={`name-${user.id || user.user_id || index}`}
+                key={`name-${userData.id || userData.user_id || index}`}
                 className="absolute text-white text-xl font-bold whitespace-nowrap"
                 style={{
                   left: `${leftOffset}px`,
@@ -134,12 +208,12 @@ export default function FlipBoard() {
           >
             <h2 className="text-6xl font-bold mb-4">LEADERBOARD</h2>
             <div className="flex flex-col gap-2">
-              {usersData.slice(0, 5).map((user, index) => {
-                const name = extractFirstName(user) || "???";
-                const level = user.level || user.goal_completions || 1;
+              {usersData.slice(0, 5).map((userData, index) => {
+                const name = extractFirstName(userData) || "???";
+                const level = userData.level || userData.goal_completions || 1;
                 return (
                   <div
-                    key={`lb-${user.id || user.user_id || index}`}
+                    key={`lb-${userData.id || userData.user_id || index}`}
                     className="flex items-center justify-between gap-8 text-lg"
                   >
                     <span>
