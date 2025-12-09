@@ -10,7 +10,7 @@ const pixelify = Pixelify_Sans({
   weight: ["400", "500", "600", "700"],
 });
 
-const publicRoutes = ["/sign-in", "/sign-up"];
+const publicRoutes = ["/sign-in", "/sign-up", "/flipboard"];
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();

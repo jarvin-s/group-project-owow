@@ -16,6 +16,7 @@ import {
 } from "@/lib/flipboardUtils";
 import { useRouter } from "next/navigation";
 import BottomNavbar from "./bottom-navbar";
+import { useAuth } from "@/lib/auth";
 
 const pixelify = Pixelify_Sans({
   subsets: ["latin"],
@@ -27,6 +28,11 @@ export default function FlipBoard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [usersData, setUsersData] = useState<UserFlower[]>([]);
   const { width: canvasWidth, height: canvasHeight } = getCanvasDimensions();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (loading) return;
+  });
 
   const renderCanvas = useCallback((grid: number[][]) => {
     const canvas = canvasRef.current;
@@ -72,12 +78,22 @@ export default function FlipBoard() {
       className={`min-h-screen bg-black flex items-center justify-center p-8 gap-12 ${pixelify.className}`}
     >
       <div className="flex flex-col gap-2 items-start">
-        <button
-          onClick={() => router.push("/")}
-          className="text-white text-xl font-bold cursor-pointer"
-        >
-          ← Back to home
-        </button>
+        {user && (
+          <button
+            onClick={() => router.push("/")}
+            className="text-white text-xl font-bold cursor-pointer"
+          >
+            ← Back to home
+          </button>
+        )}
+        {!user && (
+          <button
+            onClick={() => router.push("/sign-in")}
+            className="text-white text-xl font-bold cursor-pointer"
+          >
+            ← Back to Sign In
+          </button>
+        )}
         <div className="relative border-4 border-white p-4 rounded-xl bg-black shadow-[0_0_30px_rgba(255,255,255,0.1)]">
           <canvas
             ref={canvasRef}
@@ -137,7 +153,7 @@ export default function FlipBoard() {
           </div>
         </div>
       </div>
-      <BottomNavbar />
+      {user && <BottomNavbar />}
     </div>
   );
 }
